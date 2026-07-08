@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luceria Cocktail Atelier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-mark">LUCERIA &amp; CO.</div>
+        <h1>COCKTAIL<br /><span>Atelier</span></h1>
+        <p class="intro">
+          以 IBA 经典鸡尾酒为灵感，整理命名、故事、配方与作品图占位，适合先作为电脑端菜单与资料管理界面。
+        </p>
+
+        <div class="search-panel">
+          <label for="searchInput">查找酒款</label>
+          <input id="searchInput" type="search" placeholder="输入中英文名称、基酒或风味" />
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-group">
+            <p>酒单分类</p>
+            <nav class="category-tabs" aria-label="鸡尾酒分类">
+              <button class="tab active" data-filter-type="category" data-filter="all">All / 全部</button>
+              <button class="tab" data-filter-type="category" data-filter="classic">Classic / 经典</button>
+              <button class="tab" data-filter-type="category" data-filter="signature">Signature / 特调</button>
+              <button class="tab" data-filter-type="category" data-filter="nonalcoholic">No Alcohol / 无酒精</button>
+            </nav>
+          </div>
+
+          <div class="filter-group">
+            <p>基酒分类</p>
+            <nav class="category-tabs" aria-label="基酒分类">
+              <button class="tab active" data-filter-type="base" data-filter="all">All / 全部</button>
+              <button class="tab" data-filter-type="base" data-filter="whiskey">Whiskey / 威士忌</button>
+              <button class="tab" data-filter-type="base" data-filter="gin">Gin / 金酒</button>
+              <button class="tab" data-filter-type="base" data-filter="rum">Rum / 朗姆</button>
+              <button class="tab" data-filter-type="base" data-filter="tequila">Tequila / 龙舌兰</button>
+              <button class="tab" data-filter-type="base" data-filter="vodka">Vodka / 伏特加</button>
+              <button class="tab" data-filter-type="base" data-filter="none">No Base / 无基酒</button>
+            </nav>
+          </div>
+        </div>
+
+        <div class="palette-card" aria-label="设计色板">
+          <div>
+            <span style="--swatch: #eaceaa"></span>
+            Champagne
+          </div>
+          <div>
+            <span style="--swatch: #d39858"></span>
+            Whiskey Sour
+          </div>
+          <div>
+            <span style="--swatch: #1c3217"></span>
+            Deep Olive
+          </div>
+        </div>
+      </aside>
+
+      <section class="content-area">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Desktop Preview</p>
+            <h2>Classic Cocktail Collection</h2>
+          </div>
+          <button class="ghost-button" id="resetButton">重置筛选</button>
+        </header>
+
+        <section class="layout-grid">
+          <div class="cocktail-list" id="cocktailList" aria-label="酒款列表"></div>
+
+          <article class="detail-card" id="detailCard" aria-live="polite">
+            <div class="image-placeholder">
+              <div class="glass-line-art">◇</div>
+              <p>IMAGE PLACEHOLDER</p>
+              <span>为每款酒预留作品图 / 酒杯图 / 调酒过程图</span>
+            </div>
+
+            <div class="detail-copy">
+              <p class="eyebrow" id="detailCategory">Classic</p>
+              <h3 id="detailName">Whiskey Sour<span>威士忌酸</span></h3>
+              <p class="story" id="detailStory"></p>
+
+              <div class="info-columns">
+                <section>
+                  <h4>命名</h4>
+                  <p id="detailNaming"></p>
+                </section>
+                <section>
+                  <h4>基酒与风味</h4>
+                  <p id="detailProfile"></p>
+                </section>
+              </div>
+
+              <section class="recipe-box">
+                <div class="section-title">
+                  <h4>调酒配方</h4>
+                  <span id="detailMethod"></span>
+                </div>
+                <ul id="ingredientList"></ul>
+              </section>
+
+              <section class="review-panel" aria-label="酒款评论">
+                <div class="section-title">
+                  <h4>酒友评论</h4>
+                  <span id="reviewSummary">0 条评论</span>
+                </div>
+
+                <form class="review-form" id="reviewForm">
+                  <label>
+                    评分 / Rating
+                    <input id="ratingInput" type="number" min="0" max="10" step="0.1" value="8.0" required />
+                  </label>
+                  <label>
+                    评论 / Comment
+                    <textarea
+                      id="commentInput"
+                      rows="3"
+                      maxlength="500"
+                      placeholder="记录这杯酒的口感、香气或调酒心得，最多 500 字"
+                      required
+                    ></textarea>
+                  </label>
+                  <button type="submit">发布评论</button>
+                </form>
+
+                <div class="review-list" id="reviewList"></div>
+              </section>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

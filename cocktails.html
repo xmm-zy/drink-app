@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=sidebar-nav-5" />
   </head>
   <body>
     <main class="app-shell">
@@ -51,20 +51,10 @@
           </div>
         </div>
 
-        <div class="palette-card" aria-label="设计色板">
-          <div>
-            <span style="--swatch: #eaceaa"></span>
-            Champagne
-          </div>
-          <div>
-            <span style="--swatch: #d39858"></span>
-            Whiskey Sour
-          </div>
-          <div>
-            <span style="--swatch: #1c3217"></span>
-            Deep Olive
-          </div>
-        </div>
+        <nav class="sidebar-nav" aria-label="页面跳转">
+          <a class="home-button sidebar-nav-orange" href="./index.html">Menu</a>
+          <a class="home-button sidebar-nav-green" href="./menu.html">Main Menu</a>
+        </nav>
       </aside>
 
       <section class="content-area">
@@ -115,6 +105,7 @@
                   <h4>酒友评论</h4>
                   <span id="reviewSummary">0 条评论</span>
                 </div>
+                <p class="review-auth-hint" id="reviewAuthHint">登录后可以发布评论和点赞。</p>
 
                 <form class="review-form" id="reviewForm">
                   <label>
@@ -142,6 +133,19 @@
       </section>
     </main>
 
+    <div class="login-modal" id="loginModal" hidden>
+      <div class="login-modal-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+        <h3 id="loginModalTitle">需要登录后才能评论</h3>
+        <p>请先登录账号，再发布评论或点赞。</p>
+        <div class="login-modal-actions">
+          <button type="button" id="loginModalClose">稍后再说</button>
+          <a href="./account.html">前往登录 / Account</a>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabaseClient.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

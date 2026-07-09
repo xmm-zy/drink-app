@@ -17,7 +17,7 @@
       <section class="account-card">
         <p class="eyebrow">Luceria Account</p>
         <h1>Member Login<span>账号登录</span></h1>
-        <p class="account-intro">使用 Supabase 邮箱确认登录。登录后会显示当前账号，后续可继续接入头像、昵称、评论记录、会员等级和管理员入口。</p>
+        <p class="account-intro">使用 Supabase 邮箱登录。点击邮件中的魔法链接会回到当前网站；如果邮件模板加入了验证码，也可以直接输入验证码登录。</p>
 
         <form class="account-form" id="accountForm">
           <label>
@@ -26,15 +26,15 @@
           </label>
           <label>
             邮箱验证码 / Email Code
-            <input id="codeInput" type="text" inputmode="numeric" placeholder="可输入邮箱验证码，也可点击邮件链接" autocomplete="one-time-code" />
+            <input id="codeInput" type="text" inputmode="numeric" placeholder="可选：邮件模板开启验证码后填写" autocomplete="one-time-code" />
           </label>
           <div class="account-form-actions">
-            <button id="sendCodeButton" type="button">发送确认邮件</button>
+            <button id="sendCodeButton" type="button">发送登录邮件</button>
             <button id="verifyCodeButton" type="submit">确认登录</button>
           </div>
         </form>
 
-        <div class="account-status" id="accountStatus" role="status">请先输入邮箱并发送确认邮件。</div>
+        <div class="account-status" id="accountStatus" role="status">请先输入邮箱并发送登录邮件。魔法链接会跳转到当前域名下的 account.html。</div>
 
         <section class="account-user" id="accountUser" hidden>
           <span>当前用户 / Current User</span>
@@ -43,6 +43,7 @@
         </section>
 
         <div class="account-actions">
+          <a href="./menu.html">返回功能菜单</a>
           <a href="./index.html">返回首页</a>
           <a href="./cocktails.html">进入调酒菜单</a>
         </div>

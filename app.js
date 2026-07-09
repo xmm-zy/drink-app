@@ -115,6 +115,8 @@ const baseSpiritLabels = {
 let activeCategoryFilter = "all";
 let activeBaseFilter = "all";
 let activeCocktail = cocktails[0];
+let currentUser = null;
+let currentReviews = [];
 
 const listElement = document.querySelector("#cocktailList");
 const searchInput = document.querySelector("#searchInput");
@@ -125,6 +127,10 @@ const ratingInput = document.querySelector("#ratingInput");
 const commentInput = document.querySelector("#commentInput");
 const reviewList = document.querySelector("#reviewList");
 const reviewSummary = document.querySelector("#reviewSummary");
+const reviewAuthHint = document.querySelector("#reviewAuthHint");
+const loginModal = document.querySelector("#loginModal");
+const loginModalClose = document.querySelector("#loginModalClose");
+const luceriaDataClient = window.luceriaSupabase;
 
 function formatLabel(label) {
   return `${label.en} / ${label.zh}`;
@@ -147,6 +153,71 @@ function getReviews(cocktail) {
 
 function saveReviews(cocktail, reviews) {
   localStorage.setItem(getReviewKey(cocktail), JSON.stringify(reviews));
+}
+
+async function refreshCurrentUser() {
+  if (!luceriaDataClient?.auth) return null;
+
+  const { data } = await luceriaDataClient.auth.getUser();
+  currentUser = data.user || null;
+  return currentUser;
+}
+
+function setReviewHint(message, type = "info") {
+  if (!reviewAuthHint) return;
+  reviewAuthHint.textContent = message;
+  reviewAuthHint.dataset.type = type;
+}
+
+function openLoginModal(message) {
+  if (!loginModal) return;
+  const text = loginModal.querySelector("p");
+  if (text && message) text.textContent = message;
+  loginModal.hidden = false;
+}
+
+function closeLoginModal() {
+  if (!loginModal) return;
+  loginModal.hidden = true;
+}
+
+async function fetchRemoteReviews(cocktail) {
+  if (!luceriaDataClient?.from) return null;
+
+  const { data: reviews, error } = await luceriaDataClient
+    .from("reviews")
+    .select("id,cocktail_name,cocktail_zh_name,rating,comment,user_id,user_email,created_at")
+    .eq("cocktail_name", cocktail.name)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const reviewIds = reviews.map((review) => review.id);
+  let likes = [];
+
+  if (reviewIds.length) {
+    const { data: likeRows, error: likesError } = await luceriaDataClient
+      .from("review_likes")
+      .select("review_id,user_id")
+      .in("review_id", reviewIds);
+
+    if (!likesError) likes = likeRows || [];
+  }
+
+  return reviews.map((review) => {
+    const reviewLikes = likes.filter((like) => like.review_id === review.id);
+
+    return {
+      id: review.id,
+      rating: Number(review.rating),
+      comment: review.comment,
+      date: review.created_at,
+      userId: review.user_id,
+      userEmail: review.user_email,
+      likeCount: reviewLikes.length,
+      likedByCurrentUser: Boolean(currentUser && reviewLikes.some((like) => like.user_id === currentUser.id)),
+    };
+  });
 }
 
 function formatReviewDate(value) {
@@ -226,7 +297,7 @@ function renderList() {
   return filteredCocktails;
 }
 
-function renderDetail(cocktail) {
+async function renderDetail(cocktail) {
   document.querySelector("#detailCategory").textContent =
     `${formatLabel(categoryLabels[cocktail.category])} · ${formatLabel(baseSpiritLabels[cocktail.base])}`;
   document.querySelector("#detailName").innerHTML = `${cocktail.name}<span>${cocktail.zhName}</span>`;
@@ -237,7 +308,7 @@ function renderDetail(cocktail) {
   document.querySelector("#ingredientList").innerHTML = cocktail.ingredients
     .map((ingredient) => `<li>${ingredient}</li>`)
     .join("");
-  renderReviews(cocktail);
+  await renderReviews(cocktail);
 }
 
 function renderEmptyDetail() {
@@ -251,8 +322,28 @@ function renderEmptyDetail() {
   renderEmptyReviews();
 }
 
-function renderReviews(cocktail) {
-  const reviews = getReviews(cocktail);
+async function renderReviews(cocktail) {
+  await refreshCurrentUser();
+  setReviewHint(
+    currentUser
+      ? `当前账号：${currentUser.email}。评论和点赞会绑定到这个账号。`
+      : "请先登录账号，再发布评论或点赞。",
+    currentUser ? "success" : "info",
+  );
+
+  try {
+    currentReviews = await fetchRemoteReviews(cocktail);
+  } catch (error) {
+    currentReviews = getReviews(cocktail).map((review) => ({
+      ...review,
+      userEmail: "本地评论",
+      likeCount: review.likeCount || 0,
+      likedByCurrentUser: false,
+    }));
+    setReviewHint(`Supabase 评论表暂不可用：${error.message}。请先创建 reviews 和 review_likes 表。`, "error");
+  }
+
+  const reviews = currentReviews || [];
   const averageRating = reviews.length
     ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length
     : 0;
@@ -270,10 +361,26 @@ function renderReviews(cocktail) {
                 <strong>${review.rating.toFixed(1)} / 10</strong>
                 <span>
                   <time>${formatReviewDate(review.date)}</time>
-                  <button type="button" class="review-delete" data-review-id="${review.id}">删除 / Delete</button>
+                  ${
+                    review.userEmail
+                      ? `<em>${escapeHtml(review.userEmail)}</em>`
+                      : ""
+                  }
+                  ${
+                    currentUser && review.userId === currentUser.id
+                      ? `<button type="button" class="review-delete" data-review-id="${review.id}">删除 / Delete</button>`
+                      : ""
+                  }
                 </span>
               </div>
               <p>${escapeHtml(review.comment)}</p>
+              <button
+                type="button"
+                class="review-like ${review.likedByCurrentUser ? "liked" : ""}"
+                data-review-id="${review.id}"
+              >
+                ${review.likedByCurrentUser ? "已点赞" : "点赞"} / Like · ${review.likeCount || 0}
+              </button>
             </article>
           `,
         )
@@ -328,8 +435,16 @@ resetButton.addEventListener("click", () => {
   renderDetail(activeCocktail);
 });
 
-reviewForm.addEventListener("submit", (event) => {
+reviewForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  await refreshCurrentUser();
+
+  if (!currentUser) {
+    setReviewHint("请先登录账号，再发布评论。", "error");
+    openLoginModal("请先登录账号，再发布评论。");
+    return;
+  }
 
   const rating = Number.parseFloat(ratingInput.value);
   const comment = commentInput.value.trim();
@@ -337,30 +452,77 @@ reviewForm.addEventListener("submit", (event) => {
   if (!Number.isFinite(rating) || rating < 0 || rating > 10 || !comment || comment.length > 500) return;
 
   const normalizedRating = Math.round(rating * 10) / 10;
-  const reviews = getReviews(activeCocktail);
 
-  reviews.unshift({
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  const { error } = await luceriaDataClient.from("reviews").insert({
+    cocktail_name: activeCocktail.name,
+    cocktail_zh_name: activeCocktail.zhName,
     rating: normalizedRating,
     comment,
-    date: new Date().toISOString(),
+    user_id: currentUser.id,
+    user_email: currentUser.email,
   });
 
-  saveReviews(activeCocktail, reviews);
+  if (error) {
+    setReviewHint(`评论发布失败：${error.message}`, "error");
+    return;
+  }
+
   ratingInput.value = normalizedRating.toFixed(1);
   commentInput.value = "";
-  renderReviews(activeCocktail);
+  await renderReviews(activeCocktail);
 });
 
-reviewList.addEventListener("click", (event) => {
+reviewList.addEventListener("click", async (event) => {
+  const likeButton = event.target.closest(".review-like");
   const deleteButton = event.target.closest(".review-delete");
+
+  if (likeButton) {
+    await refreshCurrentUser();
+
+    if (!currentUser) {
+      setReviewHint("请先登录账号，再点赞。", "error");
+      openLoginModal("请先登录账号，再点赞。");
+      return;
+    }
+
+    const reviewId = likeButton.dataset.reviewId;
+    const review = currentReviews.find((item) => item.id === reviewId);
+
+    const { error } = review?.likedByCurrentUser
+      ? await luceriaDataClient.from("review_likes").delete().eq("review_id", reviewId).eq("user_id", currentUser.id)
+      : await luceriaDataClient.from("review_likes").insert({ review_id: reviewId, user_id: currentUser.id });
+
+    if (error) {
+      setReviewHint(`点赞操作失败：${error.message}`, "error");
+      return;
+    }
+
+    await renderReviews(activeCocktail);
+    return;
+  }
+
   if (!deleteButton) return;
 
   const reviewId = deleteButton.dataset.reviewId;
-  const reviews = getReviews(activeCocktail).filter((review) => review.id !== reviewId);
 
-  saveReviews(activeCocktail, reviews);
+  const { error } = await luceriaDataClient.from("reviews").delete().eq("id", reviewId).eq("user_id", currentUser.id);
+
+  if (error) {
+    setReviewHint(`评论删除失败：${error.message}`, "error");
+    return;
+  }
+
+  await renderReviews(activeCocktail);
+});
+
+luceriaDataClient?.auth?.onAuthStateChange(() => {
   renderReviews(activeCocktail);
+});
+
+loginModalClose?.addEventListener("click", closeLoginModal);
+
+loginModal?.addEventListener("click", (event) => {
+  if (event.target === loginModal) closeLoginModal();
 });
 
 renderList();

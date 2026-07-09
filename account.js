@@ -10,6 +10,8 @@ const accountUser = document.querySelector("#accountUser");
 const currentUserEmail = document.querySelector("#currentUserEmail");
 const logoutButton = document.querySelector("#logoutButton");
 
+const getAccountRedirectUrl = () => `${window.location.origin}/account.html`;
+
 const setStatus = (message, type = "info") => {
   accountStatus.textContent = message;
   accountStatus.dataset.type = type;
@@ -22,6 +24,11 @@ const setLoading = (isLoading) => {
 };
 
 const normalizeEmail = () => emailInput.value.trim().toLowerCase();
+
+const clearAuthParamsFromUrl = () => {
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState({}, document.title, cleanUrl);
+};
 
 const renderSession = async () => {
   const { data, error } = await luceriaAuthClient.auth.getSession();
@@ -36,8 +43,32 @@ const renderSession = async () => {
   currentUserEmail.textContent = user?.email || "未登录";
 
   if (user) {
-    setStatus("账号已登录。", "success");
+    setStatus("账号已登录。评论和点赞会绑定到这个邮箱。", "success");
   }
+};
+
+const handleAuthRedirect = async () => {
+  const query = new URLSearchParams(window.location.search);
+  const code = query.get("code");
+
+  if (!code) return false;
+
+  setLoading(true);
+  setStatus("正在通过邮件链接登录...");
+
+  const { error } = await luceriaAuthClient.auth.exchangeCodeForSession(code);
+
+  setLoading(false);
+
+  if (error) {
+    setStatus(`邮件链接登录失败：${error.message}`, "error");
+    return true;
+  }
+
+  clearAuthParamsFromUrl();
+  setStatus("已通过邮件链接登录成功。", "success");
+  await renderSession();
+  return true;
 };
 
 sendCodeButton.addEventListener("click", async () => {
@@ -49,12 +80,12 @@ sendCodeButton.addEventListener("click", async () => {
   }
 
   setLoading(true);
-  setStatus("正在发送确认邮件...");
+  setStatus("正在发送登录邮件...");
 
   const { error } = await luceriaAuthClient.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.href,
+      emailRedirectTo: getAccountRedirectUrl(),
       shouldCreateUser: true,
     },
   });
@@ -62,11 +93,14 @@ sendCodeButton.addEventListener("click", async () => {
   setLoading(false);
 
   if (error) {
-    setStatus(`确认邮件发送失败：${error.message}`, "error");
+    setStatus(`登录邮件发送失败：${error.message}`, "error");
     return;
   }
 
-  setStatus("确认邮件已发送，请查看邮箱。可以点击邮件链接，或输入邮件中的验证码。", "success");
+  setStatus(
+    `登录邮件已发送到 ${email}。默认方式是点击邮件中的登录链接，链接会跳转到 ${getAccountRedirectUrl()}。如果邮件里没有验证码，需要在 Supabase 邮件模板中加入 {{ .Token }}。`,
+    "success",
+  );
   codeInput.focus();
 });
 
@@ -77,7 +111,7 @@ accountForm.addEventListener("submit", async (event) => {
   const token = codeInput.value.trim();
 
   if (!email || !token) {
-    setStatus("请输入邮箱和邮箱验证码。", "error");
+    setStatus("请输入邮箱和邮件中的验证码。如果邮件里没有验证码，请直接点击邮件中的登录链接。", "error");
     return;
   }
 
@@ -123,4 +157,9 @@ luceriaAuthClient.auth.onAuthStateChange(() => {
   renderSession();
 });
 
-renderSession();
+(async () => {
+  const handledRedirect = await handleAuthRedirect();
+  if (!handledRedirect) {
+    await renderSession();
+  }
+})();

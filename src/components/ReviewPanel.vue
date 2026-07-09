@@ -99,6 +99,14 @@ async function loadReviews() {
     : "请先登录账号，再发布评论或点赞。";
   hintType.value = auth.isLoggedIn ? "success" : "info";
 
+  if (!supabase) {
+    reviews.value = [];
+    hint.value =
+      "Supabase 未配置。请在 Cloudflare 设置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY 后重新部署。";
+    hintType.value = "error";
+    return;
+  }
+
   const { data, error } = await supabase
     .from("reviews")
     .select("id,cocktail_name,cocktail_zh_name,rating,comment,user_id,user_email,created_at")
@@ -141,6 +149,12 @@ async function loadReviews() {
 
 async function submitReview() {
   await auth.refreshSession();
+  if (!supabase) {
+    hint.value =
+      "Supabase 未配置。请在 Cloudflare 设置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY 后重新部署。";
+    hintType.value = "error";
+    return;
+  }
   if (!auth.user) {
     hint.value = "请先登录账号，再发布评论。";
     hintType.value = "error";
@@ -181,6 +195,12 @@ async function submitReview() {
 
 async function toggleLike(review) {
   await auth.refreshSession();
+  if (!supabase) {
+    hint.value =
+      "Supabase 未配置。请在 Cloudflare 设置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY 后重新部署。";
+    hintType.value = "error";
+    return;
+  }
   if (!auth.user) {
     hint.value = "请先登录账号，再点赞。";
     hintType.value = "error";
@@ -209,6 +229,13 @@ async function toggleLike(review) {
 }
 
 async function deleteReview(reviewId) {
+  if (!supabase) {
+    hint.value =
+      "Supabase 未配置。请在 Cloudflare 设置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY 后重新部署。";
+    hintType.value = "error";
+    return;
+  }
+
   const { error } = await supabase
     .from("reviews")
     .delete()

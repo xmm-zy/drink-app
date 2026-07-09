@@ -16,7 +16,21 @@ export const useAuthStore = defineStore("auth", () => {
     statusType.value = type;
   }
 
+  function ensureSupabase() {
+    if (supabase) return true;
+    setStatus(
+      "Supabase 未配置。请在 Cloudflare 设置 VITE_SUPABASE_URL 和 VITE_SUPABASE_ANON_KEY 后重新部署。",
+      "error",
+    );
+    return false;
+  }
+
   async function refreshSession() {
+    if (!supabase) {
+      user.value = null;
+      return null;
+    }
+
     const { data, error } = await supabase.auth.getSession();
     if (error) {
       setStatus(`读取登录状态失败：${error.message}`, "error");
@@ -30,6 +44,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function handleAuthRedirect() {
+    if (!ensureSupabase()) return false;
+
     const query = new URLSearchParams(window.location.search);
     const code = query.get("code");
     if (!code) return false;
@@ -51,6 +67,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function sendMagicLink(rawEmail) {
+    if (!ensureSupabase()) return false;
+
     const normalized = rawEmail.trim().toLowerCase();
     if (!normalized) {
       setStatus("请先输入邮箱地址。", "error");
@@ -82,6 +100,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function verifyEmailCode(rawEmail, token) {
+    if (!ensureSupabase()) return false;
+
     const normalized = rawEmail.trim().toLowerCase();
     const code = token.trim();
     if (!normalized || !code) {
@@ -108,6 +128,8 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function logout() {
+    if (!ensureSupabase()) return false;
+
     loading.value = true;
     setStatus("正在退出登录...");
     const { error } = await supabase.auth.signOut();
@@ -124,6 +146,7 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   function listenAuthChanges() {
+    if (!supabase) return;
     supabase.auth.onAuthStateChange((_event, session) => {
       user.value = session?.user || null;
     });

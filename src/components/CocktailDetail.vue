@@ -1,28 +1,45 @@
 <template>
-  <article v-if="cocktail" class="detail-card" aria-live="polite">
-    <div class="image-placeholder">
-      <div class="glass-line-art">◇</div>
-      <p>IMAGE PLACEHOLDER</p>
-      <span>为每款酒预留作品图 / 酒杯图 / 调酒过程图</span>
-    </div>
-
+  <article
+    v-if="cocktail"
+    class="detail-card has-inline-photo"
+    aria-live="polite"
+  >
     <div class="detail-copy">
       <p class="eyebrow">
         {{ formatLabel(categoryLabels[cocktail.category]) }} ·
         {{ formatLabel(baseSpiritLabels[cocktail.base]) }}
       </p>
-      <h3>{{ cocktail.name }}<span>{{ cocktail.zhName }}</span></h3>
-      <p class="story">{{ cocktail.story }}</p>
 
-      <div class="info-columns">
-        <section>
-          <h4>命名</h4>
-          <p>{{ cocktail.naming }}</p>
-        </section>
-        <section>
-          <h4>基酒与风味</h4>
-          <p>{{ cocktail.profile }}</p>
-        </section>
+      <div class="detail-main with-photo">
+        <div class="detail-text">
+          <h3>{{ cocktail.name }}<span>{{ cocktail.zhName }}</span></h3>
+          <p class="story">{{ cocktail.story }}</p>
+
+          <div class="info-columns">
+            <section>
+              <h4>命名</h4>
+              <p>{{ cocktail.naming }}</p>
+            </section>
+            <section>
+              <h4>基酒与风味</h4>
+              <p>{{ cocktail.profile }}</p>
+            </section>
+          </div>
+        </div>
+
+        <figure class="detail-inline-photo">
+          <img
+            v-if="cocktail.image"
+            class="cocktail-photo"
+            :src="cocktail.image"
+            :alt="`${cocktail.name} / ${cocktail.zhName}`"
+          />
+          <div v-else class="cocktail-photo-placeholder" aria-hidden="true">
+            <span class="placeholder-mark">◇</span>
+            <p>IMAGE</p>
+            <span>{{ cocktail.zhName }}</span>
+          </div>
+        </figure>
       </div>
 
       <section class="recipe-box">

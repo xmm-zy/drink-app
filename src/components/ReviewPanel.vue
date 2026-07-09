@@ -37,7 +37,7 @@
               class="review-delete"
               @click="deleteReview(review.id)"
             >
-              删除 / Delete
+              delete
             </button>
           </span>
         </div>
@@ -48,7 +48,7 @@
           :class="{ liked: review.likedByCurrentUser }"
           @click="toggleLike(review)"
         >
-          {{ review.likedByCurrentUser ? "已点赞" : "点赞" }} / Like · {{ review.likeCount || 0 }}
+          like · {{ review.likeCount || 0 }}
         </button>
       </article>
 

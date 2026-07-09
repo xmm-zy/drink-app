@@ -614,7 +614,6 @@ button {
 .brand-mark,
 .eyebrow,
 .cocktail-card span,
-.image-placeholder p,
 .recipe-box span {
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -784,6 +783,9 @@ h1 span {
 }
 
 .content-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
   padding: 24px;
   background: rgba(251, 242, 223, 0.78);
@@ -834,16 +836,21 @@ h2 {
   display: grid;
   grid-template-columns: minmax(210px, 24%) minmax(0, 1fr);
   gap: 18px;
+  flex: 1;
   min-height: 0;
+  align-items: stretch;
 }
 
 .cocktail-list {
   display: grid;
   align-content: start;
+  align-self: stretch;
   gap: 10px;
-  max-height: calc(100vh - 208px);
-  overflow: auto;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
   overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 6px;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -923,8 +930,9 @@ h2 {
 .detail-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(240px, 34%) minmax(0, 1fr);
-  min-height: 680px;
+  grid-template-columns: 1fr;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
   background: #fff8ea;
@@ -942,80 +950,131 @@ h2 {
   transform-origin: center;
 }
 
-.image-placeholder {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 16px;
-  min-height: 100%;
-  padding: 28px;
-  text-align: center;
-  color: rgba(251, 242, 223, 0.78);
-  background:
-    linear-gradient(rgba(52, 21, 15, 0.48), rgba(52, 21, 15, 0.62)),
-    radial-gradient(circle at 55% 20%, rgba(211, 152, 88, 0.42), transparent 32%),
-    linear-gradient(145deg, rgba(52, 21, 15, 0.88), rgba(21, 12, 12, 0.86));
-}
-
-.image-placeholder::before {
-  position: absolute;
-  inset: 22px;
-  content: "";
-  border: 1px solid rgba(234, 206, 170, 0.54);
-}
-
-.glass-line-art {
-  display: grid;
-  place-items: center;
-  width: 150px;
-  height: 150px;
-  border: 1px solid rgba(234, 206, 170, 0.5);
-  border-radius: 50%;
-  color: var(--champagne);
-  font-family: "Cormorant Garamond", serif;
-  font-size: 6rem;
-  line-height: 1;
-}
-
-.image-placeholder p,
-.image-placeholder span {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-}
-
-.image-placeholder p {
-  font-size: 0.72rem;
-}
-
-.image-placeholder span {
-  max-width: 220px;
-  color: rgba(251, 242, 223, 0.64);
-  font-family: "Noto Serif SC", serif;
-  line-height: 1.8;
-}
-
 .detail-copy {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 26px;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: clamp(34px, 4.8vw, 68px);
   background: rgba(255, 248, 234, 0.18);
   backdrop-filter: blur(0.2px);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.detail-copy::-webkit-scrollbar {
+  display: none;
+}
+
+.detail-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  min-width: 0;
+}
+
+.detail-main.with-photo {
+  grid-template-columns: minmax(0, 1fr) 240px;
+  column-gap: 20px;
+}
+
+.detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.detail-inline-photo {
+  position: relative;
+  z-index: 2;
+  width: 240px;
+  margin: 0;
+  flex-shrink: 0;
+  align-self: start;
+}
+
+.detail-inline-photo .cocktail-photo {
+  display: block;
+  width: 240px;
+  height: auto;
+  aspect-ratio: 682 / 1024;
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: auto;
+  box-shadow: 0 10px 28px rgba(52, 21, 15, 0.18);
+}
+
+.cocktail-photo-placeholder {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  width: 240px;
+  aspect-ratio: 682 / 1024;
+  padding: 18px;
+  text-align: center;
+  color: rgba(251, 242, 223, 0.78);
+  background:
+    radial-gradient(circle at 50% 22%, rgba(234, 206, 170, 0.16), transparent 36%),
+    linear-gradient(160deg, rgba(36, 24, 18, 0.96), rgba(12, 10, 10, 0.98));
+  box-shadow: 0 10px 28px rgba(52, 21, 15, 0.18);
+}
+
+.cocktail-photo-placeholder .placeholder-mark {
+  color: rgba(234, 206, 170, 0.72);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.cocktail-photo-placeholder p {
+  margin: 0;
+  color: rgba(251, 242, 223, 0.7);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+}
+
+.cocktail-photo-placeholder span:last-child {
+  max-width: 9em;
+  color: rgba(251, 242, 223, 0.52);
+  font-family: "Noto Serif SC", serif;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.detail-card.has-inline-photo .detail-text .story {
+  font-size: clamp(0.78rem, 0.92vw, 0.9rem);
+  line-height: 1.75;
+}
+
+.detail-card.has-inline-photo .detail-text .info-columns h4 {
+  font-size: clamp(1.15rem, 1.4vw, 1.35rem);
+  margin-bottom: 8px;
+}
+
+.detail-card.has-inline-photo .detail-text .info-columns p {
+  font-size: clamp(0.76rem, 0.9vw, 0.88rem);
+  line-height: 1.65;
 }
 
 h3 {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 14px;
+  margin: 0;
   color: var(--coffee);
-  font-size: clamp(2.8rem, 3.6vw, 4.15rem);
+  font-size: clamp(2.2rem, 3.2vw, 4.15rem);
   letter-spacing: -0.055em;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 h3 span {
@@ -1067,6 +1126,10 @@ h4 {
   margin-top: auto;
 }
 
+.detail-card.has-inline-photo .recipe-box {
+  margin-top: 0;
+}
+
 .section-title {
   display: flex;
   align-items: baseline;
@@ -1096,14 +1159,22 @@ h4 {
   padding: 10px 0;
   color: var(--ink);
   font-family: "Noto Serif SC", serif;
+  font-size: clamp(0.88rem, 1.05vw, 1rem);
+  overflow-wrap: anywhere;
 }
 
 .recipe-box li::before {
-  content: "•";
-  color: rgba(52, 21, 15, 0.38);
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.25rem;
-  line-height: 1;
+  display: none;
+  content: none;
+}
+
+.story,
+.info-columns p,
+.review-item p,
+.review-empty,
+.review-auth-hint {
+  font-size: clamp(0.88rem, 1.05vw, 1rem);
+  overflow-wrap: anywhere;
 }
 
 .review-panel {
@@ -1152,8 +1223,15 @@ h4 {
   display: grid;
   gap: 12px;
   max-height: 220px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 6px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.review-list::-webkit-scrollbar {
+  display: none;
 }
 
 .review-item {
@@ -1498,11 +1576,34 @@ h4 {
 
   .cocktail-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: auto;
     max-height: none;
+    overflow: visible;
   }
 
-  .image-placeholder {
-    min-height: 340px;
+  .detail-card {
+    height: auto;
+    min-height: 680px;
+    overflow: visible;
+  }
+
+  .detail-copy {
+    overflow: visible;
+  }
+
+  .detail-main.with-photo {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-inline-photo {
+    width: min(240px, 56vw);
+    order: -1;
+    justify-self: end;
+  }
+
+  .detail-inline-photo .cocktail-photo,
+  .cocktail-photo-placeholder {
+    width: 100%;
   }
 
   .review-form {

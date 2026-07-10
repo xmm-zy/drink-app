@@ -6,6 +6,8 @@ create table if not exists public.reviews (
   comment text not null check (char_length(comment) <= 500),
   user_id uuid not null references auth.users(id) on delete cascade,
   user_email text,
+  user_name text not null default 'Member',
+  user_avatar text not null default '',
   created_at timestamptz not null default now()
 );
 
@@ -67,6 +69,8 @@ create table if not exists public.reviews (
   comment text not null check (char_length(comment) <= 500),
   user_id uuid not null references auth.users(id) on delete cascade,
   user_email text,
+  user_name text not null default 'Member',
+  user_avatar text not null default '',
   created_at timestamptz not null default now()
 );
 

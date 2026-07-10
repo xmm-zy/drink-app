@@ -8,6 +8,8 @@ create table if not exists public.reviews (
   comment text not null check (char_length(comment) <= 500),
   user_id uuid not null references auth.users(id) on delete cascade,
   user_email text not null default '',
+  user_name text not null default 'Member',
+  user_avatar text not null default '',
   created_at timestamptz not null default now()
 );
 
@@ -18,6 +20,9 @@ create table if not exists public.review_likes (
   created_at timestamptz not null default now(),
   unique (review_id, user_id)
 );
+
+alter table public.reviews add column if not exists user_name text not null default 'Member';
+alter table public.reviews add column if not exists user_avatar text not null default '';
 
 create index if not exists reviews_cocktail_name_idx on public.reviews (cocktail_name);
 create index if not exists review_likes_review_id_idx on public.review_likes (review_id);

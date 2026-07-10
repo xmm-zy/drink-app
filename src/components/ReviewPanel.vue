@@ -5,6 +5,13 @@
       <span>{{ summaryText }}</span>
     </div>
     <p class="review-auth-hint" :data-type="hintType">{{ hint }}</p>
+    <div v-if="auth.isLoggedIn" class="review-current-user">
+      <span class="review-user-chip">
+        <img v-if="auth.profile.avatarUrl" :src="auth.profile.avatarUrl" alt="当前账号头像" />
+        <span v-else>{{ identityInitial(auth.profile.name) }}</span>
+        <em>{{ auth.profile.name }}</em>
+      </span>
+    </div>
 
     <form class="review-form" @submit.prevent="submitReview">
       <label>
@@ -30,7 +37,11 @@
           <strong>{{ review.rating.toFixed(1) }} / 10</strong>
           <span>
             <time>{{ formatReviewDate(review.date) }}</time>
-            <em v-if="review.userEmail">{{ review.userEmail }}</em>
+            <span class="review-user-chip review-user-chip--small">
+              <img v-if="review.userAvatar" :src="review.userAvatar" alt="评论账号头像" />
+              <span v-else>{{ identityInitial(review.userName) }}</span>
+              <em>{{ review.userName }}</em>
+            </span>
             <button
               v-if="auth.user && review.userId === auth.user.id"
               type="button"
@@ -82,6 +93,13 @@ const summaryText = computed(() => {
   return `${reviews.value.length} 条评论 · 平均 ${average.toFixed(1)} / 10`;
 });
 
+function identityInitial(name) {
+  return String(name || "G")
+    .trim()
+    .slice(0, 1)
+    .toUpperCase();
+}
+
 function formatReviewDate(value) {
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
@@ -95,7 +113,7 @@ function formatReviewDate(value) {
 async function loadReviews() {
   await auth.refreshSession();
   hint.value = auth.isLoggedIn
-    ? `当前账号：${auth.email}。评论和点赞会绑定到这个账号。`
+    ? "评论和点赞会绑定到当前头像与昵称。"
     : "请先登录账号，再发布评论或点赞。";
   hintType.value = auth.isLoggedIn ? "success" : "info";
 
@@ -109,7 +127,7 @@ async function loadReviews() {
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("id,cocktail_name,cocktail_zh_name,rating,comment,user_id,user_email,created_at")
+    .select("id,cocktail_name,cocktail_zh_name,rating,comment,user_id,user_email,user_name,user_avatar,created_at")
     .eq("cocktail_name", props.cocktail.name)
     .order("created_at", { ascending: false });
 
@@ -138,7 +156,8 @@ async function loadReviews() {
       comment: review.comment,
       date: review.created_at,
       userId: review.user_id,
-      userEmail: review.user_email,
+      userName: review.user_name || review.user_email || "Member",
+      userAvatar: review.user_avatar || "",
       likeCount: reviewLikes.length,
       likedByCurrentUser: Boolean(
         auth.user && reviewLikes.some((like) => like.user_id === auth.user.id),
@@ -180,6 +199,8 @@ async function submitReview() {
     comment: comment.value.trim(),
     user_id: auth.user.id,
     user_email: auth.user.email,
+    user_name: auth.profile.name,
+    user_avatar: auth.profile.avatarUrl || "",
   });
 
   if (error) {

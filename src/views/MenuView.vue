@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-page">
+  <div class="menu-page" :class="{ 'menu-page--lite': useLiteMotion }">
     <main class="menu-shell">
       <header class="menu-header">
         <RouterLink to="/">LUCERIA &amp; CO.</RouterLink>
@@ -175,7 +175,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
 const placeholderAudio = "/audio/placeholder-loop.wav";
@@ -195,6 +195,7 @@ const currentTimeSec = ref(0);
 const durationSec = ref(0);
 const progressPercent = ref(0);
 const waveformBars = [14, 20, 30, 22, 28, 34, 24, 38, 18, 32, 36, 22, 28, 34, 24, 30, 20, 28];
+const useLiteMotion = ref(false);
 
 function triggerUpload() {
   fileInputRef.value?.click();
@@ -333,6 +334,19 @@ function formatTime(seconds) {
   const secs = Math.floor(safe % 60);
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
+
+onMounted(() => {
+  const nav = window.navigator;
+  const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
+  const saveData = Boolean(connection?.saveData);
+  const slowNetwork = /2g/.test(connection?.effectiveType || "");
+  const lowMemory = Number(nav.deviceMemory || 8) <= 4;
+  const lowCores = Number(nav.hardwareConcurrency || 8) <= 4;
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+  useLiteMotion.value = prefersReduced || saveData || slowNetwork || (coarsePointer && (lowMemory || lowCores));
+});
 
 onBeforeUnmount(() => {
   const player = getPlayer();

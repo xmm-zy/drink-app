@@ -1,5 +1,5 @@
 <template>
-  <div class="home-page">
+  <div class="home-page" :class="{ 'home-page--lite': useLiteMotion }">
     <img
       class="hands-overlay"
       :src="handsOverlay"
@@ -43,7 +43,24 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import handsOverlay from "@/assets/hands-overlay.webp";
 import cocktailCenter from "@/assets/cocktail-surreal-center.webp";
+
+const useLiteMotion = ref(false);
+
+onMounted(() => {
+  const nav = window.navigator;
+  const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
+  const saveData = Boolean(connection?.saveData);
+  const slowNetwork = /2g/.test(connection?.effectiveType || "");
+  const lowMemory = Number(nav.deviceMemory || 8) <= 4;
+  const lowCores = Number(nav.hardwareConcurrency || 8) <= 4;
+  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+
+  // Keep full motion on capable devices, degrade only when likely constrained.
+  useLiteMotion.value = prefersReduced || saveData || slowNetwork || (coarsePointer && (lowMemory || lowCores));
+});
 </script>

@@ -30,7 +30,7 @@ body {
     linear-gradient(rgba(255, 248, 234, 0.66), rgba(241, 223, 189, 0.68)),
     radial-gradient(circle at 18% 18%, rgba(211, 152, 88, 0.24), transparent 28%),
     radial-gradient(circle at 80% 8%, rgba(234, 206, 170, 0.32), transparent 22%),
-    url("/assets/green-flowers.png"),
+    url("/assets/green-flowers.webp"),
     linear-gradient(135deg, #fff8ea 0%, #f1dfbd 46%, #e8cfa4 100%);
   background-attachment: fixed, fixed, fixed, fixed, fixed;
   background-position: center, center, center, center, center;
@@ -83,7 +83,7 @@ body::after {
     linear-gradient(rgba(20, 62, 32, 0.52), rgba(19, 74, 46, 0.62)),
     radial-gradient(circle at 52% 48%, rgba(234, 206, 170, 0.24), transparent 25%),
     radial-gradient(circle at 78% 20%, rgba(217, 132, 45, 0.36), transparent 18%),
-    url("/assets/green-flowers.png"),
+    url("/assets/green-flowers.webp"),
     linear-gradient(135deg, #173d20 0%, #3b672d 48%, #092c1d 100%);
   background-attachment: fixed, fixed, fixed, fixed, fixed;
   background-position: center, center, center, center, center;
@@ -351,7 +351,7 @@ body::after {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 248, 234, 0.72), rgba(241, 223, 189, 0.76)),
-    url("/assets/green-flowers.png") center / cover no-repeat,
+    url("/assets/green-flowers.webp") center / cover no-repeat,
     linear-gradient(135deg, #173d20 0%, #3b672d 48%, #092c1d 100%);
 }
 
@@ -985,7 +985,7 @@ h2 {
   content: "";
   background:
     linear-gradient(rgba(255, 248, 234, 0.18), rgba(245, 232, 203, 0.2)),
-    url("/assets/parchment-scroll.png") center / cover no-repeat;
+    url("/assets/parchment-scroll.webp") center / cover no-repeat;
   transform: scale(1.22);
   transform-origin: center;
 }
@@ -1424,7 +1424,7 @@ h4 {
   color: var(--ink);
   background:
     linear-gradient(rgba(255, 248, 234, 0.72), rgba(241, 223, 189, 0.76)),
-    url("/assets/green-flowers.png") center / cover no-repeat,
+    url("/assets/green-flowers.webp") center / cover no-repeat,
     linear-gradient(135deg, #173d20 0%, #3b672d 48%, #092c1d 100%);
 }
 

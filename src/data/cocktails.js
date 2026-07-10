@@ -4,7 +4,7 @@ export const cocktails = [
     zhName: "威士忌酸",
     category: "classic",
     base: "whiskey",
-    image: "/assets/whiskey-sour.png",
+    image: "/assets/whiskey-sour.webp",
     naming: "名字来自酸酒 Sour 家族，以威士忌、柠檬与糖的平衡为核心。",
     story:
       "Whiskey Sour 在 19 世纪的美国酒吧文化中成形，早期酸酒常被水手和旅人用于平衡烈酒口感。它的魅力不在复杂，而在酸、甜、烈三者的准确比例。",

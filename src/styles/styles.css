@@ -342,6 +342,8 @@ body::after {
 }
 
 .account-page {
+  position: relative;
+  overflow: hidden;
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -353,7 +355,42 @@ body::after {
     linear-gradient(135deg, #173d20 0%, #3b672d 48%, #092c1d 100%);
 }
 
+.account-side-image {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.9;
+  filter: drop-shadow(0 12px 20px rgba(24, 16, 12, 0.18));
+}
+
+.account-side-image--top-left {
+  left: clamp(10px, 2.8vw, 42px);
+  top: clamp(12px, 2.6vh, 38px);
+  width: clamp(180px, 18vw, 270px);
+}
+
+.account-side-image--top-right {
+  right: clamp(14px, 3vw, 48px);
+  top: clamp(12px, 2.6vh, 38px);
+  width: clamp(180px, 18vw, 270px);
+}
+
+.account-side-image--bottom-left {
+  left: clamp(10px, 2.8vw, 42px);
+  bottom: clamp(24px, 8vh, 80px);
+  width: clamp(160px, 16vw, 250px);
+}
+
+.account-side-image--bottom-right {
+  right: clamp(14px, 3vw, 48px);
+  bottom: clamp(22px, 7vh, 76px);
+  width: clamp(220px, 22vw, 330px);
+}
+
 .account-shell {
+  position: relative;
+  z-index: 1;
   width: min(680px, calc(100vw - 32px));
   border: 1px solid rgba(52, 21, 15, 0.18);
   padding: clamp(24px, 4vw, 46px);
@@ -2051,6 +2088,34 @@ h4 {
     max-height: 250px;
   }
 
+  .account-side-image {
+    opacity: 0.72;
+  }
+
+  .account-side-image--top-left {
+    left: clamp(4px, 2vw, 18px);
+    top: 12px;
+    width: clamp(120px, 20vw, 170px);
+  }
+
+  .account-side-image--top-right {
+    right: clamp(4px, 2vw, 18px);
+    top: 12px;
+    width: clamp(120px, 20vw, 170px);
+  }
+
+  .account-side-image--bottom-left {
+    left: clamp(4px, 2vw, 18px);
+    bottom: 20px;
+    width: clamp(120px, 20vw, 170px);
+  }
+
+  .account-side-image--bottom-right {
+    right: clamp(4px, 2vw, 18px);
+    bottom: 16px;
+    width: clamp(120px, 20vw, 170px);
+  }
+
   .menu-glass-nav {
     display: grid;
     gap: 18px;
@@ -2121,6 +2186,10 @@ h4 {
 }
 
 @media (max-width: 720px) {
+  .account-side-image {
+    display: none;
+  }
+
   .hands-overlay {
     opacity: 0.78;
   }

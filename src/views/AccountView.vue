@@ -1,5 +1,29 @@
 <template>
   <div class="account-page">
+    <img
+      class="account-side-image account-side-image--top-left"
+      src="/assets/account-top-left.png"
+      alt=""
+      aria-hidden="true"
+    />
+    <img
+      class="account-side-image account-side-image--top-right"
+      src="/assets/account-top-right.png"
+      alt=""
+      aria-hidden="true"
+    />
+    <img
+      class="account-side-image account-side-image--bottom-left"
+      src="/assets/account-login-left.png"
+      alt=""
+      aria-hidden="true"
+    />
+    <img
+      class="account-side-image account-side-image--bottom-right"
+      src="/assets/account-login-right.png"
+      alt=""
+      aria-hidden="true"
+    />
     <main class="account-shell">
       <section class="account-card">
         <p class="eyebrow">Luceria Account</p>

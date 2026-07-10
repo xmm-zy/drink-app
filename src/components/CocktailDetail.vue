@@ -33,6 +33,8 @@
             class="cocktail-photo"
             :src="cocktail.image"
             :alt="`${cocktail.name} / ${cocktail.zhName}`"
+            loading="lazy"
+            decoding="async"
           />
           <div v-else class="cocktail-photo-placeholder" aria-hidden="true">
             <span class="placeholder-mark">◇</span>

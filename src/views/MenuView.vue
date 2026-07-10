@@ -13,7 +13,14 @@
 
       <section class="menu-scene" aria-label="主菜单酒杯与唱片机布局">
         <aside class="menu-turntable-panel">
-          <img class="menu-turntable-image" src="/assets/menu-turntable-cutout.png" alt="复古唱片机" />
+          <img
+            class="menu-turntable-image"
+            src="/assets/menu-turntable-cutout.webp"
+            alt="复古唱片机"
+            loading="lazy"
+            decoding="async"
+            fetchpriority="low"
+          />
           <div class="menu-player">
             <p class="eyebrow">Vinyl Player</p>
             <audio
@@ -83,8 +90,11 @@
           >
             <img
               class="menu-glass-right"
-              src="/assets/menu-glass-right.png"
+              src="/assets/menu-glass-right.webp"
               alt="调酒菜单酒杯"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
             />
             <span class="menu-glass-label">
               <strong>调酒菜单</strong>
@@ -99,8 +109,11 @@
           >
             <img
               class="menu-glass-center"
-              src="/assets/menu-glass-center.png"
+              src="/assets/menu-glass-center.webp"
               alt="账号登录酒杯"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
             />
             <span class="menu-glass-label">
               <strong>账号登录</strong>
@@ -115,8 +128,11 @@
           >
             <img
               class="menu-glass-bottom"
-              src="/assets/menu-glass-bottom.png"
+              src="/assets/menu-glass-bottom.webp"
               alt="喝酒故事酒杯"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
             />
             <span class="menu-glass-label">
               <strong>喝酒故事</strong>
@@ -125,14 +141,28 @@
           </RouterLink>
 
           <RouterLink class="menu-glass-chip menu-glass-chip--orange" to="/games">
-            <img class="menu-glass-line" src="/assets/menu-glass-line-orange.png" alt="橙色线条酒杯" />
+            <img
+              class="menu-glass-line"
+              src="/assets/menu-glass-line-orange.webp"
+              alt="橙色线条酒杯"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
+            />
             <span class="menu-glass-label menu-glass-label--chip">
               <strong>小游戏</strong>
               <em>Mini Games</em>
             </span>
           </RouterLink>
           <RouterLink class="menu-glass-chip menu-glass-chip--blue" to="/tools">
-            <img class="menu-glass-line" src="/assets/menu-glass-line-blue.png" alt="天蓝色线条酒杯" />
+            <img
+              class="menu-glass-line"
+              src="/assets/menu-glass-line-blue.webp"
+              alt="天蓝色线条酒杯"
+              loading="lazy"
+              decoding="async"
+              fetchpriority="low"
+            />
             <span class="menu-glass-label menu-glass-label--chip">
               <strong>调酒器具</strong>
               <em>Bar Tools</em>

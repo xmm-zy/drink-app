@@ -2,27 +2,39 @@
   <div class="account-page">
     <img
       class="account-side-image account-side-image--top-left"
-      src="/assets/account-top-left.png"
+      src="/assets/account-top-left.webp"
       alt=""
       aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      fetchpriority="low"
     />
     <img
       class="account-side-image account-side-image--top-right"
-      src="/assets/account-top-right.png"
+      src="/assets/account-top-right.webp"
       alt=""
       aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      fetchpriority="low"
     />
     <img
       class="account-side-image account-side-image--bottom-left"
-      src="/assets/account-login-left.png"
+      src="/assets/account-login-left.webp"
       alt=""
       aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      fetchpriority="low"
     />
     <img
       class="account-side-image account-side-image--bottom-right"
-      src="/assets/account-login-right.png"
+      src="/assets/account-login-right.webp"
       alt=""
       aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      fetchpriority="low"
     />
     <main class="account-shell">
       <section class="account-card">

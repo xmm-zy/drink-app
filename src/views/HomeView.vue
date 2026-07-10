@@ -1,6 +1,13 @@
 <template>
   <div class="home-page">
-    <img class="hands-overlay" :src="handsOverlay" alt="" aria-hidden="true" />
+    <img
+      class="hands-overlay"
+      :src="handsOverlay"
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+      fetchpriority="low"
+    />
     <main class="home-shell">
       <header class="home-nav">
         <div class="brand-mark">LUCERIA &amp; CO.</div>
@@ -20,7 +27,7 @@
         <div class="hero-stage" aria-hidden="true">
           <div class="headline-shadow">MIXOLOGY</div>
           <div class="hero-image-frame">
-            <img class="hero-cocktail-photo" :src="cocktailCenter" alt="" />
+            <img class="hero-cocktail-photo" :src="cocktailCenter" alt="" decoding="async" fetchpriority="high" />
           </div>
         </div>
 
@@ -37,6 +44,6 @@
 
 <script setup>
 import { RouterLink } from "vue-router";
-import handsOverlay from "@/assets/hands-overlay.png";
-import cocktailCenter from "@/assets/cocktail-surreal-center.png";
+import handsOverlay from "@/assets/hands-overlay.webp";
+import cocktailCenter from "@/assets/cocktail-surreal-center.webp";
 </script>

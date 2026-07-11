@@ -5,5 +5,4 @@ const redirectsPath = resolve("dist/_redirects");
 
 if (existsSync(redirectsPath)) {
   unlinkSync(redirectsPath);
-  console.log("Removed dist/_redirects to avoid Cloudflare infinite-loop deploy error.");
 }

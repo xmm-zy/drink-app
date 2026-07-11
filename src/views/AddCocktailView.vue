@@ -6,13 +6,19 @@
     </header>
 
     <section class="cocktail-create-hero">
-      <p class="eyebrow">Create a Cocktail</p>
-      <h1>新增调酒<span>完整填写酒款档案</span></h1>
-      <p>所有字段将严格对应酒款详情页中的名称、故事、命名、基酒与风味、图片和调酒配方。</p>
+      <p class="eyebrow">{{ isEditMode ? "Edit Cocktail" : "Create a Cocktail" }}</p>
+      <h1>{{ isEditMode ? "编辑调酒" : "新增调酒" }}<span>{{ isEditMode ? "更新你的酒款档案" : "完整填写酒款档案" }}</span></h1>
+      <p>
+        {{
+          isEditMode
+            ? "可更新中文名、故事、命名、基酒与风味、图片和调酒配方；英文名称用于关联评论，发布后不可修改。"
+            : "所有字段将严格对应酒款详情页中的名称、故事、命名、基酒与风味、图片和调酒配方。"
+        }}
+      </p>
     </section>
 
     <section class="cocktail-create-layout">
-      <form class="cocktail-create-form" @submit.prevent="submitCocktail">
+      <form class="cocktail-create-form" :aria-busy="working || loadingExisting" @submit.prevent="submitCocktail">
         <div class="cocktail-create-section">
           <div class="cocktail-create-section-title">
             <span>01</span>
@@ -21,7 +27,16 @@
           <div class="cocktail-create-fields cocktail-create-fields--two">
             <label>
               英文名称 / Name
-              <input v-model.trim="form.name" type="text" minlength="2" maxlength="60" placeholder="Whiskey Sour" required />
+              <input
+                v-model.trim="form.name"
+                type="text"
+                minlength="2"
+                maxlength="60"
+                placeholder="Whiskey Sour"
+                :readonly="isEditMode"
+                required
+              />
+              <small v-if="isEditMode">英文名称用于关联评论，编辑时保持不变。</small>
             </label>
             <label>
               中文名称 / Chinese Name
@@ -48,14 +63,14 @@
             </label>
           </div>
           <label>
-            本地酒款图片 / Image File
+            {{ isEditMode ? "更换酒款图片（可选）/ Replace Image" : "本地酒款图片 / Image File" }}
             <input
               type="file"
               accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-              required
+              :required="!isEditMode"
               @change="selectImage"
             />
-            <small>支持 JPG、JPEG、PNG，最大 5MB。建议使用竖版图片。</small>
+            <small>支持 JPG、JPEG、PNG，最大 5MB。{{ isEditMode ? "不选择则保留原图。" : "建议使用竖版图片。" }}</small>
             <small v-if="selectedImageFile">{{ selectedImageFile.name }} · {{ formatFileSize(selectedImageFile.size) }}</small>
           </label>
         </div>
@@ -124,18 +139,18 @@
         </div>
 
         <p class="cocktail-create-notice" :data-type="noticeType" role="status">{{ notice }}</p>
-        <button class="cocktail-create-submit" type="submit" :disabled="working">
-          {{ working ? "正在保存酒款…" : "发布到调酒菜单" }}
+        <button class="cocktail-create-submit" type="submit" :disabled="working || loadingExisting">
+          {{ working ? "正在保存酒款…" : isEditMode ? "保存酒款修改" : "发布到调酒菜单" }}
         </button>
       </form>
 
       <aside class="cocktail-create-preview">
         <p class="eyebrow">Detail Format Preview</p>
         <img
-          v-if="imagePreviewUrl"
+          v-if="displayImageUrl"
           class="cocktail-create-preview-image"
-          :src="imagePreviewUrl"
-          alt="待上传酒款图片预览"
+          :src="displayImageUrl"
+          :alt="isEditMode ? '当前酒款图片预览' : '待上传酒款图片预览'"
         />
         <h3>{{ form.name || "Cocktail Name" }}<span>{{ form.zhName || "酒款中文名" }}</span></h3>
         <p class="cocktail-create-preview-story">{{ form.story || "酒款故事会显示在这里。" }}</p>
@@ -158,28 +173,47 @@
       </aside>
     </section>
 
-    <LoginModal :open="loginModalOpen" message="请先登录账号，再新增调酒。" @close="loginModalOpen = false" />
+    <LoginModal
+      :open="loginModalOpen"
+      :message="isEditMode ? '请先登录账号，再编辑酒款。' : '请先登录账号，再新增调酒。'"
+      @close="loginModalOpen = false"
+    />
   </main>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import LoginModal from "@/components/LoginModal.vue";
 import { cocktails as staticCocktails } from "@/data/cocktails";
 import { supabase } from "@/lib/supabase";
+import {
+  canEditCocktail,
+  fetchUserCocktailById,
+  parseIngredients,
+  removeCocktailImage,
+  updateUserCocktail,
+  uploadCocktailImage,
+  validateCocktailForm,
+  validateImageFile,
+} from "@/lib/user-cocktails";
 import { useAuthStore } from "@/stores/auth";
 
+const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const working = ref(false);
-const notice = ref("登录后即可把完整酒款资料发布到菜单。");
+const loadingExisting = ref(false);
+const notice = ref("");
 const noticeType = ref("info");
 const loginModalOpen = ref(false);
 const selectedImageFile = ref(null);
 const imagePreviewUrl = ref("");
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
+const existingCocktail = ref(null);
+const existingImageUrl = ref("");
+const editId = computed(() => String(route.params.id || ""));
+const isEditMode = computed(() => route.name === "cocktail-edit" && Boolean(editId.value));
+const displayImageUrl = computed(() => imagePreviewUrl.value || existingImageUrl.value);
 
 const form = reactive({
   name: "",
@@ -193,18 +227,19 @@ const form = reactive({
   ingredients: "",
 });
 
-const parsedIngredients = computed(() =>
-  form.ingredients
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean),
-);
+const parsedIngredients = computed(() => parseIngredients(form.ingredients));
 
 const previewIngredients = computed(() =>
   parsedIngredients.value.length ? parsedIngredients.value : ["材料名称与用量", "装饰或辅料"],
 );
 
 onBeforeUnmount(clearImagePreview);
+onMounted(async () => {
+  notice.value = isEditMode.value
+    ? "正在读取酒款资料…"
+    : "登录后即可把完整酒款资料发布到菜单。";
+  if (isEditMode.value) await loadExistingCocktail();
+});
 
 function clearImagePreview() {
   if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
@@ -217,14 +252,9 @@ function selectImage(event) {
   selectedImageFile.value = null;
 
   if (!file) return;
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-    notice.value = "图片仅支持 JPG、JPEG 或 PNG 格式。";
-    noticeType.value = "error";
-    event.target.value = "";
-    return;
-  }
-  if (file.size > MAX_IMAGE_SIZE) {
-    notice.value = "图片大小不能超过 5MB。";
+  const imageError = validateImageFile(file);
+  if (imageError) {
+    notice.value = imageError;
     noticeType.value = "error";
     event.target.value = "";
     return;
@@ -232,7 +262,7 @@ function selectImage(event) {
 
   selectedImageFile.value = file;
   imagePreviewUrl.value = URL.createObjectURL(file);
-  notice.value = "图片已选择，发布时会自动上传。";
+  notice.value = isEditMode.value ? "新图片已选择，保存时会替换原图。" : "图片已选择，发布时会自动上传。";
   noticeType.value = "success";
 }
 
@@ -242,7 +272,7 @@ function formatFileSize(bytes) {
 
 async function submitCocktail() {
   if (!supabase) {
-    notice.value = "Supabase 未配置，暂时无法发布酒款。";
+    notice.value = `Supabase 未配置，暂时无法${isEditMode.value ? "编辑" : "发布"}酒款。`;
     noticeType.value = "error";
     return;
   }
@@ -250,99 +280,136 @@ async function submitCocktail() {
   await auth.refreshSession();
   if (!auth.user) {
     loginModalOpen.value = true;
-    notice.value = "请先登录账号，再新增调酒。";
+    notice.value = `请先登录账号，再${isEditMode.value ? "编辑" : "新增"}调酒。`;
     noticeType.value = "error";
     return;
   }
 
-  if (!selectedImageFile.value) {
-    notice.value = "请选择一张 JPG 或 PNG 酒款图片。";
+  if (isEditMode.value && !canEditCocktail(existingCocktail.value, auth.user)) {
+    notice.value = "只有酒款作者可以编辑这条酒款资料。";
     noticeType.value = "error";
     return;
   }
 
-  if (parsedIngredients.value.length < 2 || parsedIngredients.value.length > 12) {
-    notice.value = "配方材料必须填写 2–12 行，每行一种材料。";
-    noticeType.value = "error";
-    return;
-  }
-  if (parsedIngredients.value.some((item) => item.length < 2 || item.length > 120)) {
-    notice.value = "每条配方材料需为 2–120 个字符。";
-    noticeType.value = "error";
-    return;
-  }
-  if (staticCocktails.some((item) => item.name.toLowerCase() === form.name.toLowerCase())) {
-    notice.value = "该英文名称已存在，请为新酒款使用唯一名称。";
+  const validationError = validateCocktailForm({
+    form,
+    ingredients: parsedIngredients.value,
+    staticCocktails,
+    imageFile: selectedImageFile.value,
+    requireImage: !isEditMode.value,
+  });
+  if (validationError) {
+    notice.value = validationError;
     noticeType.value = "error";
     return;
   }
 
   working.value = true;
-  notice.value = "正在上传酒款图片…";
+  notice.value = selectedImageFile.value ? "正在上传酒款图片…" : "正在保存酒款资料…";
   noticeType.value = "info";
-  const extension = selectedImageFile.value.type === "image/png" ? "png" : "jpg";
-  const uniqueName =
-    typeof globalThis.crypto?.randomUUID === "function"
-      ? globalThis.crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  const imagePath = `${auth.user.id}/${uniqueName}.${extension}`;
-  const { error: uploadError } = await supabase.storage
-    .from("cocktail-images")
-    .upload(imagePath, selectedImageFile.value, {
-      cacheControl: "31536000",
-      contentType: selectedImageFile.value.type,
-      upsert: false,
-    });
-
-  if (uploadError) {
+  let uploadedImage = null;
+  try {
+    if (selectedImageFile.value) {
+      uploadedImage = await uploadCocktailImage(supabase, selectedImageFile.value, auth.user.id);
+    }
+  } catch (error) {
     working.value = false;
-    notice.value = `图片上传失败：${uploadError.message}`;
+    notice.value = error.message;
     noticeType.value = "error";
     return;
   }
 
-  const { data: imageData } = supabase.storage.from("cocktail-images").getPublicUrl(imagePath);
-  const imageUrl = imageData?.publicUrl || "";
-  if (!imageUrl) {
-    await supabase.storage.from("cocktail-images").remove([imagePath]);
-    working.value = false;
-    notice.value = "图片已上传，但无法获取公开地址。";
-    noticeType.value = "error";
-    return;
-  }
+  const payload = {
+    name: form.name,
+    zh_name: form.zhName,
+    category: form.category,
+    base: form.base,
+    image: uploadedImage?.imageUrl || existingImageUrl.value,
+    naming: form.naming,
+    story: form.story,
+    profile: form.profile,
+    method: form.method,
+    ingredients: parsedIngredients.value,
+  };
+  notice.value = "正在保存酒款资料…";
 
-  notice.value = "图片上传完成，正在保存酒款资料…";
-  const { data, error } = await supabase
-    .from("user_cocktails")
-    .insert({
-      name: form.name,
-      zh_name: form.zhName,
-      category: form.category,
-      base: form.base,
-      image: imageUrl,
-      naming: form.naming,
-      story: form.story,
-      profile: form.profile,
-      method: form.method,
-      ingredients: parsedIngredients.value,
-      user_id: auth.user.id,
-      user_name: auth.profile.name,
-    })
-    .select("id")
-    .single();
+  const { data, error } = isEditMode.value
+    ? await updateUserCocktail(supabase, editId.value, auth.user.id, payload)
+    : await supabase
+        .from("user_cocktails")
+        .insert({
+          ...payload,
+          user_id: auth.user.id,
+          user_name: auth.profile.name,
+        })
+        .select("id")
+        .single();
   working.value = false;
 
   if (error) {
-    await supabase.storage.from("cocktail-images").remove([imagePath]);
+    if (uploadedImage) await removeCocktailImage(supabase, uploadedImage.storagePath);
     notice.value =
       error.code === "23505"
         ? "该英文名称已被使用，请更换后重试。"
-        : `酒款发布失败：${error.message}`;
+        : `酒款${isEditMode.value ? "更新" : "发布"}失败：${error.message}`;
     noticeType.value = "error";
     return;
   }
 
-  await router.push({ name: "cocktails", query: { created: data.id } });
+  if (isEditMode.value && uploadedImage && existingImageUrl.value) {
+    await removeCocktailImage(supabase, existingImageUrl.value);
+  }
+  await router.push({
+    name: "cocktails",
+    query: isEditMode.value ? { updated: data.id } : { created: data.id },
+  });
+}
+
+async function loadExistingCocktail() {
+  if (!supabase) {
+    notice.value = "Supabase 未配置，无法读取待编辑酒款。";
+    noticeType.value = "error";
+    return;
+  }
+
+  loadingExisting.value = true;
+  await auth.refreshSession();
+  if (!auth.user) {
+    loadingExisting.value = false;
+    loginModalOpen.value = true;
+    notice.value = "请先登录作者账号，再编辑酒款。";
+    noticeType.value = "error";
+    return;
+  }
+
+  const { cocktail, error } = await fetchUserCocktailById(supabase, editId.value);
+  loadingExisting.value = false;
+  if (error || !cocktail) {
+    notice.value = `无法读取酒款：${error?.message || "记录不存在"}`;
+    noticeType.value = "error";
+    return;
+  }
+  if (!canEditCocktail(cocktail, auth.user)) {
+    notice.value = "只有酒款作者可以编辑这条酒款资料。";
+    noticeType.value = "error";
+    return;
+  }
+
+  existingCocktail.value = cocktail;
+  existingImageUrl.value = cocktail.image;
+  Object.assign(form, {
+    name: cocktail.name,
+    zhName: cocktail.zhName,
+    category: cocktail.category,
+    base: cocktail.base,
+    story: cocktail.story,
+    naming: cocktail.naming,
+    profile: cocktail.profile,
+    method: cocktail.method,
+    ingredients: cocktail.ingredients.join("\n"),
+  });
+  notice.value = "酒款资料已载入，修改后点击保存。";
+  noticeType.value = "success";
 }
 </script>
 
@@ -605,6 +672,86 @@ async function submitCocktail() {
   .cocktail-create-fields--two,
   .cocktail-create-preview > div {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .cocktail-create-page {
+    min-height: 100dvh;
+    padding:
+      max(14px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      calc(76px + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    background-attachment: scroll;
+  }
+
+  .cocktail-create-nav {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cocktail-create-nav a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .cocktail-create-hero {
+    padding: 24px 0 18px;
+  }
+
+  .cocktail-create-hero h1 {
+    font-size: clamp(2rem, 12vw, 2.8rem);
+    line-height: 1;
+  }
+
+  .cocktail-create-section {
+    padding: 18px 14px;
+  }
+
+  .cocktail-create-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .cocktail-create-section-title h2 {
+    font-size: clamp(1.25rem, 6vw, 1.6rem);
+  }
+
+  .cocktail-create-form input,
+  .cocktail-create-form select,
+  .cocktail-create-form textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .cocktail-create-form input[type="file"] {
+    max-width: 100%;
+  }
+
+  .cocktail-create-form small {
+    overflow-wrap: anywhere;
+  }
+
+  .cocktail-create-notice {
+    margin: 16px 14px 0;
+  }
+
+  .cocktail-create-submit {
+    min-height: 48px;
+    margin: 14px;
+  }
+
+  .cocktail-create-preview {
+    order: 0;
+    gap: 16px;
+    padding: 18px 14px;
+  }
+
+  .cocktail-create-preview h3 {
+    font-size: clamp(1.8rem, 10vw, 2.5rem);
   }
 }
 </style>

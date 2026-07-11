@@ -67,6 +67,7 @@ flowchart LR
 | `/menu` | `menu` | `MenuView.vue` |
 | `/cocktails` | `cocktails` | `CocktailsView.vue` |
 | `/cocktails/new` | `cocktail-create` | `AddCocktailView.vue` |
+| `/cocktails/:id/edit` | `cocktail-edit` | `AddCocktailView.vue` |
 | `/account` | `account` | `AccountView.vue` |
 | `/stories` | `stories` | `StoriesView.vue` |
 | `/games` | `games` | `DiceWheelView.vue` |
@@ -191,7 +192,7 @@ flowchart TD
 
 用户酒款优先排列，再追加内置酒款。
 
-`cocktailKey()` 使用：
+`src/lib/user-cocktails.js` 统一数据库行映射、表单校验、权限、Storage 图片生命周期和 CRUD 调用。`cocktailKey()` 使用：
 
 - 用户酒款：`user:{uuid}`
 - 静态酒款：`static:{name}`
@@ -214,7 +215,34 @@ flowchart TD
 
 客户端拦截与内置酒款重复的英文名；数据库通过 `lower(name)` 唯一索引防止用户酒款之间重名。
 
-### 6.3 评论
+### 6.3 更新酒款
+
+`AddCocktailView.vue` 同时承担创建和编辑模式。编辑路由通过 `route.params.id` 读取记录，并要求当前用户为酒款作者。
+
+流程：
+
+1. 查询现有酒款并校验 `cocktail.userId === auth.user.id`。
+2. 预填中文名、分类、基酒、故事、命名、风味、调制方式和材料。
+3. 英文名称保持只读，避免现有评论按名称关联时失联。
+4. 未选择新图片时保留原 URL。
+5. 选择新图片时先上传新对象，再更新 `user_cocktails`。
+6. 数据库更新失败时删除新对象；更新成功后删除旧对象。
+7. 跳转 `/cocktails?updated={id}` 并重新选中酒款。
+
+`user_cocktails.updated_at` 由数据库 Trigger 自动维护。UPDATE RLS 仅允许作者，管理员不能修改其他用户内容。
+
+### 6.4 删除酒款
+
+`CocktailDetail.vue` 根据身份显示管理操作：
+
+- 作者：编辑、删除。
+- 管理员：仅删除其他用户投稿。
+- 普通访客：无管理按钮。
+- 静态内置酒款：始终只读。
+
+删除顺序为数据库记录优先、Storage 图片清理随后执行，避免数据库删除失败时详情引用已经消失的图片。Storage 清理失败不会恢复已删除记录，但会向界面返回孤立图片警告。
+
+### 6.5 评论
 
 文件：`src/components/ReviewPanel.vue`
 
@@ -296,6 +324,8 @@ flowchart TD
 | `ingredients` | `text[]`，2–12 项 |
 | `user_id` | `auth.users` 外键 |
 | `user_name` | 作者昵称快照 |
+| `created_at` | 创建时间 |
+| `updated_at` | Trigger 自动维护的最后更新时间 |
 
 ### 9.4 论坛
 
@@ -357,9 +387,11 @@ RLS 中管理员使用：
 - 最大 5MB。
 - MIME：JPEG、PNG。
 - 路径：`{user_id}/{uuid}.{ext}`。
-- 登录用户可上传。
+- 登录用户只能上传到以自己 UUID 开头的目录。
 - Owner 或管理员可删除。
 - 使用 `getPublicUrl()` 生成详情页图片地址。
+- 更新图片时使用新 UUID 上传；数据库成功后删除旧对象，失败时回滚新对象。
+- 删除酒款后清理对应对象；公开 Bucket 不配置列表读取策略，公开 URL 仍可正常访问。
 
 ## 12. 游戏引擎
 
@@ -437,7 +469,8 @@ dealing → bidding → playing → settled
 - `1120px`：主布局转为单列，酒款列表改为两列。
 - `860px`：牌桌布局简化。
 - `720px`：账号装饰和浮动身份控件调整。
-- 页面 scoped 样式使用 `clamp()`、`900px/620px`、`940px/520px` 等局部断点。
+- `480px`：表单、详情、论坛、播放器、管理按钮和触控目标适配窄屏。
+- 页面 scoped 样式使用 `clamp()`、`900px/620px`、`940px/520px` 等局部断点，并处理横屏和 `safe-area-inset`。
 - 支持 `prefers-reduced-motion`。
 
 ## 14. 构建与部署
@@ -453,6 +486,7 @@ npm run dev
 
 ```powershell
 npm run lint
+npm test
 npm run build
 ```
 
@@ -469,11 +503,17 @@ Output: dist
 not_found_handling: single-page-application
 ```
 
-因此 `/cocktails/new` 等子路由可直接打开。
+因此 `/cocktails/new`、`/cocktails/:id/edit` 等子路由可直接打开。
 
 ## 15. 测试策略
 
-项目暂时没有自动化测试脚本。最低验证要求：
+项目使用 Vitest 测试用户酒款工具层：
+
+```powershell
+npm test
+```
+
+`src/lib/user-cocktails.test.js` 当前覆盖 13 个用例，包括数据映射、材料解析、图片格式/大小、创建与编辑校验、作者/管理员权限和 Storage 路径解析。仍需结合以下手工流程验证 Vue 与 Supabase 集成：
 
 ### Auth
 
@@ -489,6 +529,10 @@ not_found_handling: single-page-application
 - JPG/PNG 5MB 限制。
 - 图片上传失败和数据库失败回滚。
 - 重名约束。
+- 作者编辑和删除。
+- 管理员删除他人投稿。
+- 非作者 UPDATE/DELETE 被 RLS 拒绝。
+- 图片替换后清理旧图，更新失败时回滚新图。
 
 ### 评论和论坛
 
@@ -561,13 +605,20 @@ not_found_handling: single-page-application
 - 检查 Storage INSERT policy。
 - 确认用户已登录且 Token 未过期。
 
+### 酒款无法编辑或删除
+
+- 确认已执行 `supabase/cocktail-crud-setup.sql`。
+- 检查当前 JWT 的用户 ID 是否与 `user_cocktails.user_id` 一致。
+- 管理员只能删除其他用户酒款，不能编辑。
+- 管理员角色刚更新时刷新 Session 或重新登录。
+- 图片清理失败时检查 `cocktail_images_auth_delete` 和对象 `owner`。
+
 ## 18. 后续建议
 
-1. 增加 Vitest 单元测试和 Playwright E2E。
+1. 增加 Vue 组件测试和 Playwright E2E。
 2. 评论改为通过 cocktail UUID 外键关联。
-3. 增加用户酒款编辑和删除 UI。
-4. 为投稿内容增加审核状态。
-5. 配置 Turnstile CAPTCHA。
-6. 将管理员初始化从硬编码 SQL 调整为安全运维流程。
-7. 若公开联机牌局，将状态变更移至 Edge Function 或服务端权威逻辑。
-8. 增加 CI，在 PR 中执行 lint、build 和测试。
+3. 为投稿内容增加审核状态。
+4. 配置 Turnstile CAPTCHA。
+5. 将管理员初始化从硬编码 SQL 调整为安全运维流程。
+6. 若公开联机牌局，将状态变更移至 Edge Function 或服务端权威逻辑。
+7. 增加 CI，在 PR 中执行 lint、build 和测试。

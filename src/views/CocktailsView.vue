@@ -20,9 +20,14 @@
         <CocktailList
           :cocktails="filteredCocktails"
           :selected-key="cocktailKey(activeCocktail)"
-          @select="activeCocktail = $event"
+          @select="selectCocktail"
         />
-        <CocktailDetail :cocktail="activeCocktail" @need-login="openLoginModal" />
+        <CocktailDetail
+          ref="detailRef"
+          :cocktail="activeCocktail"
+          @deleted="handleCocktailDeleted"
+          @need-login="openLoginModal"
+        />
       </section>
     </section>
 
@@ -31,16 +36,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import CocktailSidebar from "@/components/CocktailSidebar.vue";
 import CocktailList from "@/components/CocktailList.vue";
 import CocktailDetail from "@/components/CocktailDetail.vue";
 import LoginModal from "@/components/LoginModal.vue";
 import { baseSpiritLabels, categoryLabels, cocktails as staticCocktails } from "@/data/cocktails";
 import { supabase } from "@/lib/supabase";
+import { cocktailKey, mapUserCocktailRow, USER_COCKTAIL_SELECT } from "@/lib/user-cocktails";
 
 const route = useRoute();
+const router = useRouter();
 const searchQuery = ref("");
 const categoryFilter = ref("all");
 const baseFilter = ref("all");
@@ -49,6 +56,7 @@ const activeCocktail = ref(staticCocktails[0]);
 const loadNotice = ref("");
 const loginModalOpen = ref(false);
 const loginModalMessage = ref("请先登录账号，再发布评论或点赞。");
+const detailRef = ref(null);
 
 const filteredCocktails = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -90,16 +98,11 @@ watch(filteredCocktails, (list) => {
 
 onMounted(loadUserCocktails);
 
-function cocktailKey(cocktail) {
-  if (!cocktail) return "";
-  return cocktail.id ? `user:${cocktail.id}` : `static:${cocktail.name}`;
-}
-
 async function loadUserCocktails() {
   if (!supabase) return;
   const { data, error } = await supabase
     .from("user_cocktails")
-    .select("id,name,zh_name,category,base,image,naming,story,profile,method,ingredients,user_id,user_name,created_at")
+    .select(USER_COCKTAIL_SELECT)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -107,30 +110,15 @@ async function loadUserCocktails() {
     return;
   }
 
-  const customCocktails = (data || []).map((item) => ({
-    id: item.id,
-    name: item.name,
-    zhName: item.zh_name,
-    category: item.category,
-    base: item.base,
-    image: item.image || "",
-    naming: item.naming,
-    story: item.story,
-    profile: item.profile,
-    method: item.method,
-    ingredients: item.ingredients || [],
-    userId: item.user_id,
-    userName: item.user_name,
-    createdAt: item.created_at,
-  }));
+  const customCocktails = (data || []).map(mapUserCocktailRow);
   allCocktails.value = [...customCocktails, ...staticCocktails];
-  loadNotice.value = "";
 
-  const createdId = String(route.query.created || "");
+  const focusId = String(route.query.updated || route.query.created || "");
   activeCocktail.value =
-    customCocktails.find((item) => item.id === createdId) ||
+    customCocktails.find((item) => item.id === focusId) ||
     allCocktails.value.find((item) => cocktailKey(item) === cocktailKey(activeCocktail.value)) ||
     allCocktails.value[0];
+  loadNotice.value = route.query.updated ? "酒款资料已更新。" : "";
 }
 
 function resetFilters() {
@@ -138,6 +126,21 @@ function resetFilters() {
   categoryFilter.value = "all";
   baseFilter.value = "all";
   activeCocktail.value = allCocktails.value[0] || null;
+}
+
+function selectCocktail(cocktail) {
+  activeCocktail.value = cocktail;
+  if (!window.matchMedia("(max-width: 720px)").matches) return;
+  nextTick(() => {
+    detailRef.value?.$el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+async function handleCocktailDeleted({ id, warning }) {
+  allCocktails.value = allCocktails.value.filter((cocktail) => cocktail.id !== id);
+  activeCocktail.value = filteredCocktails.value[0] || null;
+  loadNotice.value = warning || "酒款已删除。";
+  await router.replace({ name: "cocktails" });
 }
 
 function openLoginModal(message) {

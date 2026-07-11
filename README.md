@@ -2,6 +2,21 @@
 
 标准 Vue 3 + Vite 工程结构的调酒知识网站。
 
+## 核心功能
+
+- 鸡尾酒搜索、筛选和详情
+- 用户酒款完整 CRUD，支持图片上传、替换和清理
+- 评论、点赞、喝酒故事论坛和管理员内容管理
+- 邮箱 OTP / Magic Link 登录与头像资料
+- 摇骰子、转盘和调酒器具查询
+- 320px 起的移动端、横屏和安全区适配
+
+## 项目文档
+
+- [项目说明](PROJECT_DOCUMENTATION.md)
+- [技术文档](TECHNICAL_DOCUMENTATION.md)
+- [API 设计](API_DESIGN.md)
+
 ## 工程目录
 
 ```txt
@@ -14,7 +29,7 @@ drink-app/
 │  ├─ views/               # 页面
 │  ├─ router/              # 路由
 │  ├─ stores/              # Pinia 状态
-│  ├─ lib/                 # Supabase 等封装
+│  ├─ lib/                 # Supabase、酒款 CRUD 工具与测试
 │  ├─ data/                # 静态数据
 │  ├─ styles/              # 全局样式
 │  ├─ App.vue
@@ -22,6 +37,9 @@ drink-app/
 ├─ supabase/               # SQL 建表脚本
 ├─ legacy/                 # 旧版静态站备份
 ├─ .env.example            # 环境变量模板
+├─ API_DESIGN.md           # Supabase API、RLS 与 CRUD 设计
+├─ PROJECT_DOCUMENTATION.md
+├─ TECHNICAL_DOCUMENTATION.md
 ├─ eslint.config.js        # ESLint 规范
 ├─ index.html
 ├─ package.json
@@ -51,6 +69,7 @@ npm run dev
 npm run dev        # 开发
 npm run build      # 构建
 npm run preview    # 预览构建结果
+npm test           # Vitest 单元测试
 npm run lint       # 代码检查
 npm run lint:fix  # 自动修复
 ```

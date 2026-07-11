@@ -727,11 +727,135 @@ textarea {
   .wheel-inline {
     grid-template-columns: 1fr;
   }
+
+  .wheel-stage {
+    margin-block: 8px 12px;
+    transform: none;
+  }
 }
 
 @media (max-width: 520px) {
+  .dice-wheel-shell {
+    width: calc(100% - 16px);
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      calc(76px + env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .dice-wheel-header a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .dice-wheel-hero h1 {
+    font-size: clamp(1.8rem, 10vw, 2.4rem);
+    line-height: 1.08;
+  }
+
+  .dice-wheel-hero h1 span {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+  }
+
+  .dice-card,
+  .wheel-card {
+    padding: 12px 10px;
+  }
+
+  .dice-card header,
+  .wheel-card header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dice-card h3,
+  .wheel-card h3 {
+    display: block;
+    font-size: 1.15rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  textarea {
+    height: auto;
+    min-height: 112px;
+  }
+
   .dice-counts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wheel-stage {
+    width: min(78vw, 240px);
+  }
+
+  .wheel-label {
+    width: min(72px, 24%);
+    padding: 2px 4px;
+    font-size: clamp(0.55rem, 3.2vw, 0.72rem);
+  }
+
+  .wheel-hub {
+    width: max(24%, 44px);
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 0.7rem;
+  }
+
+  .wheel-card .history-list {
+    max-height: min(160px, 28dvh);
+  }
+
+  .wheel-card .history-list li strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wheel-card .history-list time {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+  }
+
+  .tool-card-decoration {
+    opacity: 0.08;
+  }
+
+  .wheel-card-decoration {
+    transform: none;
+  }
+}
+
+@media (max-height: 480px) and (orientation: landscape) {
+  .dice-wheel-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .wheel-stage {
+    width: min(34vw, 160px);
+    margin-block: 4px 8px;
+    transform: none;
+  }
+
+  .wheel-card .history-list {
+    max-height: 120px;
   }
 }
 </style>

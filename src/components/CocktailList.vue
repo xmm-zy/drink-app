@@ -26,6 +26,7 @@
 <script setup>
 import { RouterLink } from "vue-router";
 import { baseSpiritLabels, categoryLabels, formatLabel } from "@/data/cocktails";
+import { cocktailKey } from "@/lib/user-cocktails";
 
 defineProps({
   cocktails: { type: Array, required: true },
@@ -33,8 +34,4 @@ defineProps({
 });
 
 defineEmits(["select"]);
-
-function cocktailKey(cocktail) {
-  return cocktail.id ? `user:${cocktail.id}` : `static:${cocktail.name}`;
-}
 </script>

@@ -7,6 +7,7 @@ const router = createRouter({
     { path: "/menu", name: "menu", component: () => import("@/views/MenuView.vue") },
     { path: "/cocktails", name: "cocktails", component: () => import("@/views/CocktailsView.vue") },
     { path: "/cocktails/new", name: "cocktail-create", component: () => import("@/views/AddCocktailView.vue") },
+    { path: "/cocktails/:id/edit", name: "cocktail-edit", component: () => import("@/views/AddCocktailView.vue") },
     { path: "/account", name: "account", component: () => import("@/views/AccountView.vue") },
     { path: "/stories", name: "stories", component: () => import("@/views/StoriesView.vue") },
     { path: "/games", name: "games", component: () => import("@/views/DiceWheelView.vue") },

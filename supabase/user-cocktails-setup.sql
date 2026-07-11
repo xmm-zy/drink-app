@@ -15,6 +15,9 @@ create table if not exists public.user_cocktails (
   created_at timestamptz not null default now()
 );
 
+alter table public.user_cocktails
+  add column if not exists updated_at timestamptz not null default now();
+
 create unique index if not exists user_cocktails_name_unique_idx
   on public.user_cocktails (lower(name));
 
@@ -23,6 +26,22 @@ create index if not exists user_cocktails_created_at_idx
 
 create index if not exists user_cocktails_user_id_idx
   on public.user_cocktails (user_id);
+
+create or replace function public.set_user_cocktails_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists user_cocktails_set_updated_at on public.user_cocktails;
+create trigger user_cocktails_set_updated_at
+before update on public.user_cocktails
+for each row execute function public.set_user_cocktails_updated_at();
 
 alter table public.user_cocktails enable row level security;
 

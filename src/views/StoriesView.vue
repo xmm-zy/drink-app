@@ -103,6 +103,9 @@
                 <button type="button" :class="{ favored: hasPostFavorited(post) }" @click="toggleFavorite(post.id)">
                   {{ hasPostFavorited(post) ? "已收藏" : "收藏" }}
                 </button>
+                <button v-if="canDeleteContent(post.authorKey)" type="button" @click="deletePost(post)">
+                  删除帖子
+                </button>
               </div>
             </footer>
 
@@ -143,6 +146,9 @@
                     {{ hasReplyLiked(reply) ? "已赞" : "点赞" }} · {{ reply.likes }}
                   </button>
                   <button type="button" @click="setReplyTarget(post.id, reply)">回复此条</button>
+                  <button v-if="canDeleteContent(reply.authorKey)" type="button" @click="deleteReply(reply)">
+                    删除回复
+                  </button>
                 </div>
 
                 <div v-for="child in childReplies(post, reply.id)" :key="child.id" class="stories-reply-item stories-reply-item--child">
@@ -160,6 +166,9 @@
                       {{ hasReplyLiked(child) ? "已赞" : "点赞" }} · {{ child.likes }}
                     </button>
                     <button type="button" @click="setReplyTarget(post.id, child)">回复此条</button>
+                    <button v-if="canDeleteContent(child.authorKey)" type="button" @click="deleteReply(child)">
+                      删除回复
+                    </button>
                   </div>
                 </div>
               </div>
@@ -370,6 +379,10 @@ function hasReplyLiked(reply) {
   return reply.likedBy.includes(actor.value.key);
 }
 
+function canDeleteContent(authorKey) {
+  return Boolean(auth.user && (auth.isAdmin || auth.user.id === authorKey));
+}
+
 async function ensureAuth(actionLabel) {
   await auth.refreshSession();
   if (auth.user) return true;
@@ -548,6 +561,54 @@ async function submitPost() {
   draftTitle.value = "";
   draftBody.value = "";
   draftCategory.value = "bar";
+  await loadPostsFromSupabase();
+}
+
+async function deletePost(post) {
+  if (!supabase || !(await ensureAuth("删除帖子"))) return;
+  if (!canDeleteContent(post.authorKey)) {
+    notice.value = "你没有权限删除这个帖子。";
+    noticeType.value = "error";
+    return;
+  }
+  if (!window.confirm("确定删除这个帖子及其全部回复吗？此操作无法撤销。")) return;
+
+  isWorking.value = true;
+  let query = supabase.from("stories_posts").delete().eq("id", post.id);
+  if (!auth.isAdmin) query = query.eq("user_id", auth.user.id);
+  const { error } = await query;
+  if (error) {
+    notice.value = `删除失败：${error.message}`;
+    noticeType.value = "error";
+    isWorking.value = false;
+    return;
+  }
+  notice.value = "帖子已删除。";
+  noticeType.value = "success";
+  await loadPostsFromSupabase();
+}
+
+async function deleteReply(reply) {
+  if (!supabase || !(await ensureAuth("删除回复"))) return;
+  if (!canDeleteContent(reply.authorKey)) {
+    notice.value = "你没有权限删除这条回复。";
+    noticeType.value = "error";
+    return;
+  }
+  if (!window.confirm("确定删除这条回复吗？其楼中楼回复也会一并删除。")) return;
+
+  isWorking.value = true;
+  let query = supabase.from("stories_replies").delete().eq("id", reply.id);
+  if (!auth.isAdmin) query = query.eq("user_id", auth.user.id);
+  const { error } = await query;
+  if (error) {
+    notice.value = `删除失败：${error.message}`;
+    noticeType.value = "error";
+    isWorking.value = false;
+    return;
+  }
+  notice.value = "回复已删除。";
+  noticeType.value = "success";
   await loadPostsFromSupabase();
 }
 

@@ -43,12 +43,12 @@
               <em>{{ review.userName }}</em>
             </span>
             <button
-              v-if="auth.user && review.userId === auth.user.id"
+              v-if="auth.user && (auth.isAdmin || review.userId === auth.user.id)"
               type="button"
               class="review-delete"
               @click="deleteReview(review.id)"
             >
-              delete
+              删除
             </button>
           </span>
         </div>
@@ -257,11 +257,18 @@ async function deleteReview(reviewId) {
     return;
   }
 
-  const { error } = await supabase
-    .from("reviews")
-    .delete()
-    .eq("id", reviewId)
-    .eq("user_id", auth.user.id);
+  await auth.refreshSession();
+  const review = reviews.value.find((item) => item.id === reviewId);
+  if (!auth.user || !review || (!auth.isAdmin && review.userId !== auth.user.id)) {
+    hint.value = "你没有权限删除这条评论。";
+    hintType.value = "error";
+    return;
+  }
+  if (!window.confirm("确定删除这条评论吗？此操作无法撤销。")) return;
+
+  let query = supabase.from("reviews").delete().eq("id", reviewId);
+  if (!auth.isAdmin) query = query.eq("user_id", auth.user.id);
+  const { error } = await query;
 
   if (error) {
     hint.value = `评论删除失败：${error.message}`;

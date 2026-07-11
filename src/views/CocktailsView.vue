@@ -11,6 +11,7 @@
         <div>
           <p class="eyebrow">Desktop Preview</p>
           <h2>Classic Cocktail Collection</h2>
+          <p v-if="loadNotice" class="cocktail-load-notice">{{ loadNotice }}</p>
         </div>
         <button class="ghost-button" type="button" @click="resetFilters">重置筛选</button>
       </header>
@@ -18,7 +19,7 @@
       <section class="layout-grid">
         <CocktailList
           :cocktails="filteredCocktails"
-          :selected-name="activeCocktail?.name || ''"
+          :selected-key="cocktailKey(activeCocktail)"
           @select="activeCocktail = $event"
         />
         <CocktailDetail :cocktail="activeCocktail" @need-login="openLoginModal" />
@@ -30,24 +31,29 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import CocktailSidebar from "@/components/CocktailSidebar.vue";
 import CocktailList from "@/components/CocktailList.vue";
 import CocktailDetail from "@/components/CocktailDetail.vue";
 import LoginModal from "@/components/LoginModal.vue";
-import { baseSpiritLabels, categoryLabels, cocktails } from "@/data/cocktails";
+import { baseSpiritLabels, categoryLabels, cocktails as staticCocktails } from "@/data/cocktails";
+import { supabase } from "@/lib/supabase";
 
+const route = useRoute();
 const searchQuery = ref("");
 const categoryFilter = ref("all");
 const baseFilter = ref("all");
-const activeCocktail = ref(cocktails[0]);
+const allCocktails = ref([...staticCocktails]);
+const activeCocktail = ref(staticCocktails[0]);
+const loadNotice = ref("");
 const loginModalOpen = ref(false);
 const loginModalMessage = ref("请先登录账号，再发布评论或点赞。");
 
 const filteredCocktails = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
 
-  return cocktails.filter((cocktail) => {
+  return allCocktails.value.filter((cocktail) => {
     const matchesCategory = categoryFilter.value === "all" || cocktail.category === categoryFilter.value;
     const matchesBase = baseFilter.value === "all" || cocktail.base === baseFilter.value;
     const categoryLabel = categoryLabels[cocktail.category];
@@ -77,16 +83,61 @@ watch(filteredCocktails, (list) => {
     activeCocktail.value = null;
     return;
   }
-  if (!list.some((item) => item.name === activeCocktail.value?.name)) {
+  if (!list.some((item) => cocktailKey(item) === cocktailKey(activeCocktail.value))) {
     activeCocktail.value = list[0];
   }
 });
+
+onMounted(loadUserCocktails);
+
+function cocktailKey(cocktail) {
+  if (!cocktail) return "";
+  return cocktail.id ? `user:${cocktail.id}` : `static:${cocktail.name}`;
+}
+
+async function loadUserCocktails() {
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from("user_cocktails")
+    .select("id,name,zh_name,category,base,image,naming,story,profile,method,ingredients,user_id,user_name,created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    loadNotice.value = "自定义酒款暂时无法加载。";
+    return;
+  }
+
+  const customCocktails = (data || []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    zhName: item.zh_name,
+    category: item.category,
+    base: item.base,
+    image: item.image || "",
+    naming: item.naming,
+    story: item.story,
+    profile: item.profile,
+    method: item.method,
+    ingredients: item.ingredients || [],
+    userId: item.user_id,
+    userName: item.user_name,
+    createdAt: item.created_at,
+  }));
+  allCocktails.value = [...customCocktails, ...staticCocktails];
+  loadNotice.value = "";
+
+  const createdId = String(route.query.created || "");
+  activeCocktail.value =
+    customCocktails.find((item) => item.id === createdId) ||
+    allCocktails.value.find((item) => cocktailKey(item) === cocktailKey(activeCocktail.value)) ||
+    allCocktails.value[0];
+}
 
 function resetFilters() {
   searchQuery.value = "";
   categoryFilter.value = "all";
   baseFilter.value = "all";
-  activeCocktail.value = cocktails[0];
+  activeCocktail.value = allCocktails.value[0] || null;
 }
 
 function openLoginModal(message) {

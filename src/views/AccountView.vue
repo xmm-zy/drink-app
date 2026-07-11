@@ -71,6 +71,7 @@
 
         <section v-if="auth.isLoggedIn" class="account-user">
           <span>当前用户 / Current User</span>
+          <strong v-if="auth.isAdmin">管理员账号 / Administrator</strong>
           <div class="account-user-profile">
             <img v-if="auth.profile.avatarUrl" :src="auth.profile.avatarUrl" alt="用户头像" />
             <span v-else>{{ profileInitial }}</span>
@@ -149,6 +150,7 @@ const profileInitial = computed(() => (auth.profile.name || "G").slice(0, 1).toU
 onMounted(async () => {
   const handled = await auth.handleAuthRedirect();
   if (!handled) await auth.refreshSession();
+  if (auth.user) await auth.refreshAccessToken();
   syncProfileDraft();
 });
 

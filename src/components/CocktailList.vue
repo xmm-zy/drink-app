@@ -1,10 +1,16 @@
 <template>
   <div class="cocktail-list" aria-label="酒款列表">
+    <RouterLink class="cocktail-card cocktail-card--create" to="/cocktails/new">
+      <span>Create Cocktail / 创建酒款</span>
+      <strong><b aria-hidden="true">＋</b>新增调酒<em>填写完整酒款资料</em></strong>
+      <small>名称 · 故事 · 风味 · 配方 · 图片</small>
+    </RouterLink>
+
     <button
       v-for="cocktail in cocktails"
-      :key="cocktail.name"
+      :key="cocktail.id || cocktail.name"
       class="cocktail-card"
-      :class="{ selected: cocktail.name === selectedName }"
+      :class="{ selected: cocktailKey(cocktail) === selectedKey }"
       type="button"
       @click="$emit('select', cocktail)"
     >
@@ -18,12 +24,17 @@
 </template>
 
 <script setup>
+import { RouterLink } from "vue-router";
 import { baseSpiritLabels, categoryLabels, formatLabel } from "@/data/cocktails";
 
 defineProps({
   cocktails: { type: Array, required: true },
-  selectedName: { type: String, default: "" },
+  selectedKey: { type: String, default: "" },
 });
 
 defineEmits(["select"]);
+
+function cocktailKey(cocktail) {
+  return cocktail.id ? `user:${cocktail.id}` : `static:${cocktail.name}`;
+}
 </script>

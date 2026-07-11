@@ -4,12 +4,15 @@ import { supabase } from "@/lib/supabase";
 
 export const useAuthStore = defineStore("auth", () => {
   const PROFILE_UPDATE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+  const EMAIL_REQUEST_COOLDOWN_MS = 60 * 1000;
+  const EMAIL_REQUEST_STORAGE_KEY = "drink_auth_email_requested_at";
   const user = ref(null);
   const loading = ref(false);
   const status = ref("请先输入邮箱并发送登录邮件。");
   const statusType = ref("info");
 
   const isLoggedIn = computed(() => Boolean(user.value));
+  const isAdmin = computed(() => user.value?.app_metadata?.role === "admin");
   const email = computed(() => user.value?.email || "");
   const profile = computed(() => {
     const metadata = user.value?.user_metadata || {};
@@ -68,6 +71,17 @@ export const useAuthStore = defineStore("auth", () => {
     return user.value;
   }
 
+  async function refreshAccessToken() {
+    if (!ensureSupabase()) return null;
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      setStatus(`刷新账号权限失败：${error.message}`, "error");
+      return null;
+    }
+    user.value = data.session?.user || null;
+    return user.value;
+  }
+
   async function handleAuthRedirect() {
     if (!ensureSupabase()) return false;
 
@@ -95,8 +109,15 @@ export const useAuthStore = defineStore("auth", () => {
     if (!ensureSupabase()) return false;
 
     const normalized = rawEmail.trim().toLowerCase();
-    if (!normalized) {
-      setStatus("请先输入邮箱地址。", "error");
+    if (!normalized || normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      setStatus("请输入格式正确且能够正常收信的邮箱地址。", "error");
+      return false;
+    }
+
+    const lastRequestedAt = Number(localStorage.getItem(EMAIL_REQUEST_STORAGE_KEY) || 0);
+    const waitMs = EMAIL_REQUEST_COOLDOWN_MS - (Date.now() - lastRequestedAt);
+    if (waitMs > 0) {
+      setStatus(`请等待 ${Math.ceil(waitMs / 1000)} 秒后再发送登录邮件。`, "error");
       return false;
     }
 
@@ -113,10 +134,17 @@ export const useAuthStore = defineStore("auth", () => {
     loading.value = false;
 
     if (error) {
-      setStatus(`登录邮件发送失败：${error.message}`, "error");
+      const isRateLimited = error.status === 429 || error.code === "over_email_send_rate_limit";
+      setStatus(
+        isRateLimited
+          ? "登录邮件发送过于频繁，请稍后重试。站点管理员需要完成自定义 SMTP 配置。"
+          : `登录邮件发送失败：${error.message}`,
+        "error",
+      );
       return false;
     }
 
+    localStorage.setItem(EMAIL_REQUEST_STORAGE_KEY, String(Date.now()));
     setStatus(
       `登录邮件已发送到 ${normalized}。请点击邮件中的登录链接，或在模板开启验证码后输入验证码。`,
       "success",
@@ -290,6 +318,7 @@ export const useAuthStore = defineStore("auth", () => {
     status,
     statusType,
     isLoggedIn,
+    isAdmin,
     email,
     profile,
     canUpdateProfile,
@@ -297,6 +326,7 @@ export const useAuthStore = defineStore("auth", () => {
     profileNextEditableAt,
     setStatus,
     refreshSession,
+    refreshAccessToken,
     handleAuthRedirect,
     sendMagicLink,
     verifyEmailCode,

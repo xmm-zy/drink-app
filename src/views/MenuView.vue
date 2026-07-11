@@ -150,8 +150,8 @@
               fetchpriority="low"
             />
             <span class="menu-glass-label menu-glass-label--chip">
-              <strong>小游戏</strong>
-              <em>Mini Games</em>
+              <strong>摇骰子 · 转转盘</strong>
+              <em>Dice &amp; Wheel</em>
             </span>
           </RouterLink>
           <RouterLink class="menu-glass-chip menu-glass-chip--blue" to="/tools">
